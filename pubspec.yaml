@@ -47,6 +47,7 @@ dependencies:
   intl: ^0.20.2 # ✅ Compatible con Firebase y Dart actuales y flutter_localizations
   package_info_plus: ^4.1.0
   connectivity_plus: ^5.0.1
+  firebase_app_check: ^0.3.2+7
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,11 @@ flutter:
 
   assets:
     - assets/logo.png
+
+  fonts:
+    - family: MiVecinoFont
+      fonts:
+        - asset: fonts/MiVecinoFont.ttf
   
 # 👇 Esto asegura que use la carpeta l10n para traducciones
 localizations:

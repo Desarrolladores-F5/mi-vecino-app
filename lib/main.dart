@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 // 🖼️ Pantallas del proyecto
 import 'screens/login_screen.dart';
@@ -9,7 +11,16 @@ import 'screens/check_auth_screen.dart'; // ✅ Verificación de sesión
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // ✅ Inicializa Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  ); // ✅ Inicializa Firebase
+
+  // ⛑️ Activar App Check con modo de depuración
+  await FirebaseAppCheck.instance.activate(
+    //webRecaptchaSiteKey: 'recaptcha-v3-site-key', // solo web, puedes ignorarlo
+    androidProvider: AndroidProvider.debug,
+  );
+
   runApp(const MiVecinoApp());
 }
 
