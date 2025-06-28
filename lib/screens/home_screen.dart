@@ -1,7 +1,9 @@
+// 📦 Importaciones necesarias
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mi_vecino/screens/login_screen.dart'; // Ajusta si cambia la ruta
+import 'package:mi_vecino/screens/login_screen.dart';
+import 'package:mi_vecino/screens/crear_publicacion_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? comunidad;
   bool cargandoUsuario = true;
 
-  // 🔄 Carga los datos del usuario desde Firestore
+  // 🔄 Cargar datos del usuario desde Firestore
   Future<void> cargarDatosUsuario() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
@@ -37,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 🔒 Diálogo para confirmar cierre de sesión
+  // 📴 Confirmar cierre de sesión con diálogo
   Future<void> confirmarCerrarSesion() async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -45,14 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("Cerrar Sesión"),
         content: const Text("¿Estás seguro que deseas cerrar sesión?"),
         actions: [
-          TextButton(
-            child: const Text("Cancelar"),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          ElevatedButton(
-            child: const Text("Salir"),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
+          TextButton(child: const Text("Cancelar"), onPressed: () => Navigator.of(context).pop(false)),
+          ElevatedButton(child: const Text("Salir"), onPressed: () => Navigator.of(context).pop(true)),
         ],
       ),
     );
@@ -78,12 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 📦 Menú lateral personalizado
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // 🧍 Encabezado con nombre y dirección
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(color: Color(0xFF3EC6A8)),
               currentAccountPicture: const CircleAvatar(
@@ -93,42 +87,16 @@ class _HomeScreenState extends State<HomeScreen> {
               accountName: Text(nombre ?? 'Nombre', style: const TextStyle(fontSize: 18)),
               accountEmail: Text(direccion ?? 'Dirección'),
             ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Ajustes'),
-              onTap: () {}, // 🛠 Acción futura
-            ),
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: const Text('Idioma'),
-              onTap: () {}, // 🌐 Acción futura
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('Acerca de la App'),
-              onTap: () {}, // ℹ️ Acción futura
-            ),
-            ListTile(
-              leading: const Icon(Icons.feedback_outlined),
-              title: const Text('Sugerencias o Feedback'),
-              onTap: () {}, // 📬 Acción futura
-            ),
-            ListTile(
-              leading: const Icon(Icons.wifi),
-              title: const Text('Estado de la App'),
-              subtitle: const Text("Conectado (Wi-Fi)"),
-              onTap: () {},
-            ),
+            ListTile(leading: const Icon(Icons.settings), title: const Text('Ajustes'), onTap: () {}),
+            ListTile(leading: const Icon(Icons.language), title: const Text('Idioma'), onTap: () {}),
+            ListTile(leading: const Icon(Icons.info_outline), title: const Text('Acerca de la App'), onTap: () {}),
+            ListTile(leading: const Icon(Icons.feedback_outlined), title: const Text('Sugerencias'), onTap: () {}),
+            ListTile(leading: const Icon(Icons.wifi), title: const Text('Estado de la App'), subtitle: const Text("Conectado (Wi-Fi)"), onTap: () {}),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Cerrar Sesión'),
-              onTap: confirmarCerrarSesion,
-            ),
+            ListTile(leading: const Icon(Icons.logout), title: const Text('Cerrar Sesión'), onTap: confirmarCerrarSesion),
           ],
         ),
       ),
-      // 🟩 AppBar con fuente personalizada
       appBar: AppBar(
         title: const Text(
           'Mi Vecino',
@@ -141,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: const Color(0xFF3EC6A8),
       ),
-      // 👤 Cuerpo principal
       body: cargandoUsuario
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -149,42 +116,73 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 👋 Bienvenida personalizada
-                  Text(
-                    'Hola, ${nombre ?? '---'} 👋',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
+                  Text('Hola, ${nombre ?? '---'} 👋', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text('Dirección: ${direccion ?? '---'}'),
                   Text('Comunidad: ${comunidad ?? '---'}'),
                   const SizedBox(height: 24),
 
-                  // 📝 Campo de publicación (diseño simple)
                   const Text('¿Qué quieres compartir?', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Escribe algo...',
-                      prefixIcon: const Icon(Icons.edit),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CrearPublicacionScreen()));
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F7F1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF3EC6A8), width: 1.2),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.edit_note, color: Color(0xFF3EC6A8)),
+                          SizedBox(width: 10),
+                          Text('Agrega una publicación...', style: TextStyle(fontSize: 16, color: Colors.black54)),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
 
-                  // 🧱 Muro de publicaciones (simulado por ahora)
+                  const SizedBox(height: 24),
                   const Text('Muro de publicaciones 🛎️', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  _publicacionUsuario('Pamela', '7 junio 2025', 'Saludos, soy nueva!!'),
-                  _publicacionUsuario('Ximena', '7 junio 2025', '¿Alguien tiene una llave inglesa???'),
+
+                  // 📡 Mostrar publicaciones en tiempo real desde Firebase
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('publicaciones').orderBy('fecha', descending: true).snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Text('Aún no hay publicaciones.');
+                      }
+
+                      final publicaciones = snapshot.data!.docs;
+                      return Column(
+                        children: publicaciones.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final autor = data['autor'] ?? 'Desconocido'; // ✅ mostrar autor correcto
+                          final fecha = data['fechaFormateada'] ?? '';
+                          final mensaje = data['mensaje'] ?? '';
+                          final archivoUrl = data['archivoUrl']; // ✅ leer la imagen
+
+                          return _publicacionUsuario(autor, fecha, mensaje, archivoUrl);
+                        }).toList(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
     );
   }
 
-  // 🧱 Widget de publicación individual
-  Widget _publicacionUsuario(String autor, String fecha, String texto) {
+  // 🧱 Widget modular para mostrar publicación con texto e imagen si existe
+  Widget _publicacionUsuario(String autor, String fecha, String texto, String? archivoUrl) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -197,9 +195,16 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(autor, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(fecha, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          if (fecha.isNotEmpty) Text(fecha, style: const TextStyle(color: Colors.grey, fontSize: 12)),
           const SizedBox(height: 8),
           Text(texto),
+          if (archivoUrl != null && archivoUrl.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(archivoUrl), // ✅ renderiza la imagen desde la URL
+            ),
+          ]
         ],
       ),
     );
