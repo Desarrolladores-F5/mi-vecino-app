@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart'; // 🧱 UI principal de Flutter
 import 'package:firebase_auth/firebase_auth.dart'; // 🔐 Autenticación con Firebase
+import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Soporte de idiomas
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,23 +10,20 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // 🔒 Clave del formulario
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); // 🔒 Clave del formulario
+  final _emailController = TextEditingController(); // 📧 Controlador email
+  final _passwordController = TextEditingController(); // 🔑 Controlador contraseña
 
-  // 📝 Controladores para los campos de texto
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
 
-  // 🎯 Estados internos
-  bool _isLoading = false; // Cargando mientras intenta loguearse
-  bool _obscurePassword = true; // Mostrar/ocultar contraseña
-
-  // 🕒 Genera saludo personalizado según la hora
+  // 🕒 Genera saludo dinámico traducido según la hora
   String _getSaludo() {
     final hora = DateTime.now().hour;
-    if (hora < 12) return '¡Buenos días, vecino!';
-    if (hora < 18) return '¡Buenas tardes, vecino!';
-    return '¡Buenas noches, vecino!';
+    final localizations = AppLocalizations.of(context);
+    if (hora < 12) return localizations.buenosDias;
+    if (hora < 18) return localizations.buenasTardes;
+    return localizations.buenasNoches;
   }
 
   // 🔐 Inicia sesión con Firebase Auth
@@ -34,24 +32,21 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // 📨 Intenta loguear con Firebase
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
-        // ✅ Si todo va bien, redirige al Home
         Navigator.pushReplacementNamed(context, '/home');
       } on FirebaseAuthException catch (e) {
-        // ❌ Errores comunes de autenticación
-        String mensaje = 'Error al iniciar sesión';
+        String mensaje = AppLocalizations.of(context).errorGenerico;
+
         if (e.code == 'user-not-found') {
-          mensaje = 'Usuario no encontrado';
+          mensaje = AppLocalizations.of(context).usuarioNoEncontrado;
         } else if (e.code == 'wrong-password') {
-          mensaje = 'Contraseña incorrecta';
+          mensaje = AppLocalizations.of(context).contrasenaIncorrecta;
         }
 
-        // 📢 Muestra error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(mensaje)),
         );
@@ -63,8 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+
     return Scaffold(
-      // 🎨 Fondo claro y amigable
       backgroundColor: const Color(0xFFF6F8FF),
       body: Center(
         child: SingleChildScrollView(
@@ -73,13 +69,11 @@ class _LoginScreenState extends State<LoginScreen> {
             key: _formKey,
             child: Column(
               children: [
-                // 🖼️ Logo principal
-                Image.asset('assets/logo.png', height: 210),
+                Image.asset('assets/logo.png', height: 210), // 🖼️ Logo
                 const SizedBox(height: 16),
 
-                // 👋 Saludo dinámico
                 Text(
-                  _getSaludo(),
+                  _getSaludo(), // 👋 Saludo según la hora
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -88,29 +82,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // 📧 Campo de email
+                // 📧 Campo de correo
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Correo electrónico',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: localizations.correo,
+                    border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || !value.contains('@')) {
-                      return 'Ingrese un correo válido';
+                      return localizations.correoInvalido;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
 
-                // 🔑 Campo de contraseña con opción de visibilidad
+                // 🔑 Campo de contraseña
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Contraseña',
+                    labelText: localizations.contrasena,
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -127,14 +121,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.length < 6) {
-                      return 'Contraseña muy corta';
+                      return localizations.contrasenaCorta;
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 24),
 
-                // 🔘 Botón de inicio de sesión o indicador de carga
+                // 🔘 Botón iniciar sesión
                 _isLoading
                     ? const CircularProgressIndicator()
                     : SizedBox(
@@ -142,23 +136,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: _login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3EC6A8), // 🎨 Color botón
+                            backgroundColor: const Color(0xFF3EC6A8),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          child: const Text(
-                            'Iniciar sesión',
-                            style: TextStyle(color: Colors.white),
+                          child: Text(
+                            localizations.iniciarSesion,
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       ),
                 const SizedBox(height: 16),
 
-                // 📎 Enlace para registrarse
+                // 📎 Enlace registro
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/register'); // 👉 Redirige al registro
+                    Navigator.pushNamed(context, '/register');
                   },
-                  child: const Text('¿No tienes cuenta? Regístrate'),
+                  child: Text(localizations.noCuentaRegistrate),
                 ),
               ],
             ),

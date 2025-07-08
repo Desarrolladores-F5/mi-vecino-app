@@ -1,8 +1,8 @@
-// ✅ Versión actualizada visualmente de register_screen.dart
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:flutter/material.dart'; // 🧱 UI
+import 'package:firebase_auth/firebase_auth.dart'; // 🔐 Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // ☁️ Firestore
+import 'package:awesome_dialog/awesome_dialog.dart'; // 💬 Diálogos bonitos
+import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Traducciones
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,9 +21,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // 📝 Registro de usuario con validación de dirección
   Future<void> _registerUser() async {
     if (_formKey.currentState!.validate()) {
       final direccion = _direccionController.text.trim();
+      final localizations = AppLocalizations.of(context)!;
 
       try {
         final snapshot = await FirebaseFirestore.instance
@@ -36,8 +38,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             context: context,
             dialogType: DialogType.warning,
             animType: AnimType.rightSlide,
-            title: 'Límite alcanzado',
-            desc: 'Solo se permiten 2 personas registradas por dirección.',
+            title: localizations.limiteAlcanzado,
+            desc: localizations.maximoDosPorDireccion,
             btnOkOnPress: () {},
           ).show();
           return;
@@ -66,27 +68,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
           context: context,
           dialogType: DialogType.success,
           animType: AnimType.scale,
-          title: 'Registro exitoso',
-          desc: 'El usuario fue registrado correctamente.',
+          title: localizations.registroExitoso,
+          desc: localizations.usuarioRegistrado,
           btnOkOnPress: () {
             Navigator.pop(context);
           },
         ).show();
       } on FirebaseAuthException catch (e) {
-        String mensaje = 'Ocurrió un error con el registro.';
+        String mensaje = localizations.errorGenerico;
+
         if (e.code == 'email-already-in-use') {
-          mensaje = 'El correo ya está registrado';
+          mensaje = localizations.correoYaRegistrado;
         } else if (e.code == 'weak-password') {
-          mensaje = 'Contraseña muy débil';
+          mensaje = localizations.contrasenaDebil;
         } else if (e.code == 'invalid-email') {
-          mensaje = 'Correo electrónico inválido';
+          mensaje = localizations.correoInvalido;
         }
 
         AwesomeDialog(
           context: context,
           dialogType: DialogType.warning,
           animType: AnimType.bottomSlide,
-          title: 'Atención',
+          title: localizations.atencion,
           desc: mensaje,
           btnOkOnPress: () {},
         ).show();
@@ -95,14 +98,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           context: context,
           dialogType: DialogType.error,
           animType: AnimType.topSlide,
-          title: 'Error',
-          desc: 'Error inesperado: $e',
+          title: localizations.error,
+          desc: '${localizations.errorInesperado}: $e',
           btnOkOnPress: () {},
         ).show();
       }
     }
   }
 
+  // 🎨 Estilo de los campos
   InputDecoration _buildDecoration(String label) {
     return InputDecoration(
       labelText: label,
@@ -114,10 +118,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FF),
       appBar: AppBar(
-        title: const Text('Registro de Vecinos'),
+        title: Text(localizations.registroVecinos),
         centerTitle: true,
         backgroundColor: const Color(0xFF3EC6A8),
       ),
@@ -130,47 +136,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 TextFormField(
                   controller: _nombreController,
-                  decoration: _buildDecoration('Nombre'),
-                  validator: (v) => v == null || v.isEmpty ? 'Ingresa tu nombre' : null,
+                  decoration: _buildDecoration(localizations.nombre),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? localizations.ingresaNombre : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _apellidoController,
-                  decoration: _buildDecoration('Apellidos'),
-                  validator: (v) => v == null || v.isEmpty ? 'Ingresa tus apellidos' : null,
+                  decoration: _buildDecoration(localizations.apellidos),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? localizations.ingresaApellidos : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _direccionController,
-                  decoration: _buildDecoration('Dirección'),
-                  validator: (v) => v == null || v.isEmpty ? 'Ingresa tu dirección' : null,
+                  decoration: _buildDecoration(localizations.direccion),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? localizations.ingresaDireccion : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _nombreComunidadController,
-                  decoration: _buildDecoration('Nombre de Comunidad'),
-                  validator: (v) => v == null || v.isEmpty ? 'Ingresa el nombre de la comunidad' : null,
+                  decoration: _buildDecoration(localizations.nombreComunidad),
+                  validator: (v) => v == null || v.isEmpty
+                      ? localizations.ingresaNombreComunidad
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _emailController,
-                  decoration: _buildDecoration('Correo electrónico'),
+                  decoration: _buildDecoration(localizations.correo),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (v) => v == null || !v.contains('@') ? 'Correo inválido' : null,
+                  validator: (v) => v == null || !v.contains('@')
+                      ? localizations.correoInvalido
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: _buildDecoration('Contraseña'),
-                  validator: (v) => v == null || v.length < 6 ? 'Mínimo 6 caracteres' : null,
+                  decoration: _buildDecoration(localizations.contrasena),
+                  validator: (v) => v == null || v.length < 6
+                      ? localizations.contrasenaCorta
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: true,
-                  decoration: _buildDecoration('Confirmar contraseña'),
-                  validator: (v) => v != _passwordController.text ? 'No coinciden' : null,
+                  decoration: _buildDecoration(localizations.confirmarContrasena),
+                  validator: (v) => v != _passwordController.text
+                      ? localizations.contrasenasNoCoinciden
+                      : null,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -182,12 +199,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   onPressed: _registerUser,
-                  child: const Text('Registrarse', style: TextStyle(color: Colors.white)),
+                  child: Text(localizations.registrarse,
+                      style: const TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(height: 10),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('¿Ya tienes cuenta? Inicia sesión'),
+                  child: Text(localizations.yaTienesCuenta),
                 ),
               ],
             ),

@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mi_vecino/screens/login_screen.dart';
 import 'package:mi_vecino/screens/crear_publicacion_screen.dart';
+import 'package:mi_vecino/screens/acerca_app_screen.dart';
+import 'package:mi_vecino/screens/sugerencias_screen.dart';
+import 'package:mi_vecino/screens/idioma_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -88,9 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
               accountEmail: Text(direccion ?? 'Dirección'),
             ),
             ListTile(leading: const Icon(Icons.settings), title: const Text('Ajustes'), onTap: () {}),
-            ListTile(leading: const Icon(Icons.language), title: const Text('Idioma'), onTap: () {}),
-            ListTile(leading: const Icon(Icons.info_outline), title: const Text('Acerca de la App'), onTap: () {}),
-            ListTile(leading: const Icon(Icons.feedback_outlined), title: const Text('Sugerencias'), onTap: () {}),
+            ListTile(leading: const Icon(Icons.language), title: const Text('Idioma'), onTap: () {Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen()));}),
+            ListTile(leading: const Icon(Icons.info_outline), title: const Text('Acerca de la App'), onTap: () {Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen()));}),
+            ListTile(leading: const Icon(Icons.feedback_outlined), title: const Text('Sugerencias'), onTap: () {Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));}),
             ListTile(leading: const Icon(Icons.wifi), title: const Text('Estado de la App'), subtitle: const Text("Conectado (Wi-Fi)"), onTap: () {}),
             const Divider(),
             ListTile(leading: const Icon(Icons.logout), title: const Text('Cerrar Sesión'), onTap: confirmarCerrarSesion),
