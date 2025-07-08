@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Localización
 
 class CrearPublicacionScreen extends StatefulWidget {
   const CrearPublicacionScreen({super.key});
@@ -17,9 +18,9 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
   XFile? _archivoSeleccionado;
   bool _cargando = false;
 
-  final Color colorPrincipal = const Color(0xFF007370); // verde
-  final Color colorSecundario = const Color(0xFFFF7A00); // naranjo
-  final Color colorBoton = const Color(0xFFFEEBCB); // tono claro desde el logo
+  final Color colorPrincipal = const Color(0xFF007370);
+  final Color colorSecundario = const Color(0xFFFF7A00);
+  final Color colorBoton = const Color(0xFFFEEBCB);
 
   Future<void> _seleccionarArchivo() async {
     final tipoArchivo = const XTypeGroup(
@@ -39,17 +40,18 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
   Future<void> _publicar() async {
     final mensaje = _mensajeController.text.trim();
     final user = FirebaseAuth.instance.currentUser;
+    final localizations = AppLocalizations.of(context)!;
 
     if (mensaje.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor escribe un mensaje')),
+        SnackBar(content: Text(localizations.mensajeVacio)),
       );
       return;
     }
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuario no autenticado')),
+        SnackBar(content: Text(localizations.usuarioNoAutenticado)),
       );
       return;
     }
@@ -85,13 +87,12 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Publicación enviada con éxito!')),
+        SnackBar(content: Text(localizations.publicacionExitosa)),
       );
       Navigator.pop(context);
     } catch (e) {
-      print('Error al publicar: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ocurrió un error al publicar')),
+        SnackBar(content: Text(localizations.errorPublicar)),
       );
     } finally {
       setState(() {
@@ -116,16 +117,18 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         backgroundColor: colorPrincipal,
-        title: const Text('Crear Publicación'),
+        title: Text(localizations.crearPublicacion),
         actions: [
           TextButton.icon(
             onPressed: _cargando ? null : _publicar,
             icon: const Icon(Icons.send, color: Colors.white),
-            label: const Text('Publicar', style: TextStyle(color: Colors.white)),
+            label: Text(localizations.publicar, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -138,7 +141,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
               controller: _mensajeController,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: '¿Qué estás pensando?',
+                hintText: localizations.placeholderMensaje,
                 filled: true,
                 fillColor: const Color(0xFFFFF4EA),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -151,7 +154,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
             ElevatedButton.icon(
               onPressed: _cargando ? null : _seleccionarArchivo,
               icon: const Icon(Icons.attach_file),
-              label: const Text('Agregar imagen o archivo'),
+              label: Text(localizations.agregarArchivo),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorBoton,
                 foregroundColor: Colors.black87,
@@ -168,7 +171,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Archivo: ${_archivoSeleccionado!.name}',
+                    '${localizations.archivo}: ${_archivoSeleccionado!.name}',
                     style: const TextStyle(fontStyle: FontStyle.italic),
                   ),
                   const SizedBox(height: 10),

@@ -433,6 +433,108 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Conectado a Internet'**
   String get estadoConectado;
+
+  /// No description provided for @descripcionApp.
+  ///
+  /// In es, this message translates to:
+  /// **'Una aplicación comunitaria pensada para mejorar la comunicación y colaboración entre vecinos.'**
+  String get descripcionApp;
+
+  /// No description provided for @version.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión'**
+  String get version;
+
+  /// No description provided for @derechosReservados.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos los derechos reservados.'**
+  String get derechosReservados;
+
+  /// No description provided for @textoSugerencia.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Tienes una sugerencia o idea para mejorar la app?'**
+  String get textoSugerencia;
+
+  /// No description provided for @hintSugerencia.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribe tu sugerencia aquí...'**
+  String get hintSugerencia;
+
+  /// No description provided for @enviar.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar'**
+  String get enviar;
+
+  /// No description provided for @sugerenciaEnviada.
+  ///
+  /// In es, this message translates to:
+  /// **'✅ Sugerencia enviada'**
+  String get sugerenciaEnviada;
+
+  /// No description provided for @errorSugerencia.
+  ///
+  /// In es, this message translates to:
+  /// **'❌ Hubo un error. Intenta más tarde'**
+  String get errorSugerencia;
+
+  /// No description provided for @crearPublicacion.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear Publicación'**
+  String get crearPublicacion;
+
+  /// No description provided for @publicar.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicar'**
+  String get publicar;
+
+  /// No description provided for @placeholderMensaje.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué estás pensando?'**
+  String get placeholderMensaje;
+
+  /// No description provided for @agregarArchivo.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar imagen o archivo'**
+  String get agregarArchivo;
+
+  /// No description provided for @archivo.
+  ///
+  /// In es, this message translates to:
+  /// **'Archivo'**
+  String get archivo;
+
+  /// No description provided for @mensajeVacio.
+  ///
+  /// In es, this message translates to:
+  /// **'Por favor escribe un mensaje'**
+  String get mensajeVacio;
+
+  /// No description provided for @usuarioNoAutenticado.
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario no autenticado'**
+  String get usuarioNoAutenticado;
+
+  /// No description provided for @publicacionExitosa.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Publicación enviada con éxito!'**
+  String get publicacionExitosa;
+
+  /// No description provided for @errorPublicar.
+  ///
+  /// In es, this message translates to:
+  /// **'Ocurrió un error al publicar'**
+  String get errorPublicar;
 }
 
 class _AppLocalizationsDelegate

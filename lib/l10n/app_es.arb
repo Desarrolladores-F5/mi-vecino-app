@@ -55,5 +55,24 @@
   "muroPublicaciones": "Muro de Publicaciones",
   "sinPublicaciones": "Aún no hay publicaciones",
   "desconocido": "Desconocido",
-  "estadoConectado": "Conectado a Internet"
+  "estadoConectado": "Conectado a Internet",
+  "descripcionApp": "Una aplicación comunitaria pensada para mejorar la comunicación y colaboración entre vecinos.",
+  "version": "Versión",
+  "derechosReservados": "Todos los derechos reservados.",
+  "sugerencias": "Sugerencias",
+  "textoSugerencia": "¿Tienes una sugerencia o idea para mejorar la app?",
+  "hintSugerencia": "Escribe tu sugerencia aquí...",
+  "enviar": "Enviar",
+  "sugerenciaEnviada": "✅ Sugerencia enviada",
+  "errorSugerencia": "❌ Hubo un error. Intenta más tarde",
+  "crearPublicacion": "Crear Publicación",
+  "publicar": "Publicar",
+  "placeholderMensaje": "¿Qué estás pensando?",
+  "agregarArchivo": "Agregar imagen o archivo",
+  "archivo": "Archivo",
+  "mensajeVacio": "Por favor escribe un mensaje",
+  "usuarioNoAutenticado": "Usuario no autenticado",
+  "publicacionExitosa": "¡Publicación enviada con éxito!",
+  "errorPublicar": "Ocurrió un error al publicar"
+
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Soporte de idiomas
 
 class SugerenciasScreen extends StatefulWidget {
   const SugerenciasScreen({super.key});
@@ -33,14 +34,14 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Sugerencia enviada')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.sugerenciaEnviada)),
         );
       }
     } catch (e) {
       print('❌ Error al enviar sugerencia: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ Hubo un error. Intenta más tarde')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorSugerencia)),
         );
       }
     } finally {
@@ -50,9 +51,11 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sugerencias'),
+        title: Text(localizations.sugerencias),
         backgroundColor: const Color(0xFF3EC6A8),
       ),
       body: Padding(
@@ -60,16 +63,16 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '¿Tienes una sugerencia o idea para mejorar la app?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              localizations.textoSugerencia,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _sugerenciaController,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'Escribe tu sugerencia aquí...',
+                hintText: localizations.hintSugerencia,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
@@ -77,7 +80,7 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
             ElevatedButton.icon(
               onPressed: _enviando ? null : enviarSugerencia,
               icon: const Icon(Icons.send),
-              label: const Text('Enviar'),
+              label: Text(localizations.enviar),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3EC6A8),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),

@@ -177,4 +177,57 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get estadoConectado => 'Conectado a Internet';
+
+  @override
+  String get descripcionApp =>
+      'Una aplicación comunitaria pensada para mejorar la comunicación y colaboración entre vecinos.';
+
+  @override
+  String get version => 'Versión';
+
+  @override
+  String get derechosReservados => 'Todos los derechos reservados.';
+
+  @override
+  String get textoSugerencia =>
+      '¿Tienes una sugerencia o idea para mejorar la app?';
+
+  @override
+  String get hintSugerencia => 'Escribe tu sugerencia aquí...';
+
+  @override
+  String get enviar => 'Enviar';
+
+  @override
+  String get sugerenciaEnviada => '✅ Sugerencia enviada';
+
+  @override
+  String get errorSugerencia => '❌ Hubo un error. Intenta más tarde';
+
+  @override
+  String get crearPublicacion => 'Crear Publicación';
+
+  @override
+  String get publicar => 'Publicar';
+
+  @override
+  String get placeholderMensaje => '¿Qué estás pensando?';
+
+  @override
+  String get agregarArchivo => 'Agregar imagen o archivo';
+
+  @override
+  String get archivo => 'Archivo';
+
+  @override
+  String get mensajeVacio => 'Por favor escribe un mensaje';
+
+  @override
+  String get usuarioNoAutenticado => 'Usuario no autenticado';
+
+  @override
+  String get publicacionExitosa => '¡Publicación enviada con éxito!';
+
+  @override
+  String get errorPublicar => 'Ocurrió un error al publicar';
 }

@@ -176,4 +176,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get estadoConectado => 'Connected to the Internet';
+
+  @override
+  String get descripcionApp =>
+      'A community app designed to improve communication and collaboration among neighbors.';
+
+  @override
+  String get version => 'Version';
+
+  @override
+  String get derechosReservados => 'All rights reserved.';
+
+  @override
+  String get textoSugerencia =>
+      'Do you have a suggestion or idea to improve the app?';
+
+  @override
+  String get hintSugerencia => 'Write your suggestion here...';
+
+  @override
+  String get enviar => 'Send';
+
+  @override
+  String get sugerenciaEnviada => '✅ Suggestion sent';
+
+  @override
+  String get errorSugerencia => '❌ There was an error. Try again later';
+
+  @override
+  String get crearPublicacion => 'Create Post';
+
+  @override
+  String get publicar => 'Publish';
+
+  @override
+  String get placeholderMensaje => 'What are you thinking?';
+
+  @override
+  String get agregarArchivo => 'Add image or file';
+
+  @override
+  String get archivo => 'File';
+
+  @override
+  String get mensajeVacio => 'Please enter a message';
+
+  @override
+  String get usuarioNoAutenticado => 'User not authenticated';
+
+  @override
+  String get publicacionExitosa => 'Post published successfully!';
+
+  @override
+  String get errorPublicar => 'An error occurred while publishing';
 }
