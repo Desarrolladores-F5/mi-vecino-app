@@ -134,4 +134,47 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get yaTienesCuenta => '¿Ya tienes cuenta? Inicia sesión';
+
+  @override
+  String get seguroCerrarSesion =>
+      '¿Estás seguro de que quieres cerrar sesión?';
+
+  @override
+  String get cancelar => 'Cancelar';
+
+  @override
+  String get salir => 'Salir';
+
+  @override
+  String get ajustes => 'Ajustes';
+
+  @override
+  String get estadoApp => 'Estado de la App';
+
+  @override
+  String get cerrarSesion => 'Cerrar sesión';
+
+  @override
+  String get hola => 'Hola';
+
+  @override
+  String get comunidad => 'Comunidad';
+
+  @override
+  String get queCompartir => '¿Qué te gustaría compartir?';
+
+  @override
+  String get agregaPublicacion => 'Agrega una publicación';
+
+  @override
+  String get muroPublicaciones => 'Muro de Publicaciones';
+
+  @override
+  String get sinPublicaciones => 'Aún no hay publicaciones';
+
+  @override
+  String get desconocido => 'Desconocido';
+
+  @override
+  String get estadoConectado => 'Conectado a Internet';
 }

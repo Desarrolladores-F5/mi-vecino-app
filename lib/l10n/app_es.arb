@@ -41,5 +41,19 @@
   "ingresaNombreComunidad": "Ingresa el nombre de la comunidad",
   "confirmarContrasena": "Confirmar Contraseña",
   "contrasenasNoCoinciden": "Las contraseñas no coinciden",
-  "yaTienesCuenta": "¿Ya tienes cuenta? Inicia sesión"
+  "yaTienesCuenta": "¿Ya tienes cuenta? Inicia sesión",
+  "seguroCerrarSesion": "¿Estás seguro de que quieres cerrar sesión?",
+  "cancelar": "Cancelar",
+  "salir": "Salir",
+  "ajustes": "Ajustes",
+  "estadoApp": "Estado de la App",
+  "cerrarSesion": "Cerrar sesión",
+  "hola": "Hola",
+  "comunidad": "Comunidad",
+  "queCompartir": "¿Qué te gustaría compartir?",
+  "agregaPublicacion": "Agrega una publicación",
+  "muroPublicaciones": "Muro de Publicaciones",
+  "sinPublicaciones": "Aún no hay publicaciones",
+  "desconocido": "Desconocido",
+  "estadoConectado": "Conectado a Internet"
 }

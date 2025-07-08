@@ -41,5 +41,19 @@
   "ingresaNombreComunidad": "Enter the name of the community",
   "confirmarContrasena": "Confirm Password",
   "contrasenasNoCoinciden": "Passwords do not match",
-  "yaTienesCuenta": "Already have an account? Log in"
+  "yaTienesCuenta": "Already have an account? Log in",
+  "seguroCerrarSesion": "Are you sure you want to log out?",
+  "cancelar": "Cancel",
+  "salir": "Log out",
+  "ajustes": "Settings",
+  "estadoApp": "App Status",
+  "cerrarSesion": "Log out",
+  "hola": "Hello",
+  "comunidad": "Community",
+  "queCompartir": "What would you like to share?",
+  "agregaPublicacion": "Add a post",
+  "muroPublicaciones": "Post Wall",
+  "sinPublicaciones": "No posts yet",
+  "desconocido": "Unknown",
+  "estadoConectado": "Connected to the Internet"
 }

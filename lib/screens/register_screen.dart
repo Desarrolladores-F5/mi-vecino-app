@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _registerUser() async {
     if (_formKey.currentState!.validate()) {
       final direccion = _direccionController.text.trim();
-      final localizations = AppLocalizations.of(context)!;
+      final localizations = AppLocalizations.of(context);
 
       try {
         final snapshot = await FirebaseFirestore.instance
@@ -118,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FF),

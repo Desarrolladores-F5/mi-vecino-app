@@ -349,6 +349,90 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'¿Ya tienes cuenta? Inicia sesión'**
   String get yaTienesCuenta;
+
+  /// No description provided for @seguroCerrarSesion.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Estás seguro de que quieres cerrar sesión?'**
+  String get seguroCerrarSesion;
+
+  /// No description provided for @cancelar.
+  ///
+  /// In es, this message translates to:
+  /// **'Cancelar'**
+  String get cancelar;
+
+  /// No description provided for @salir.
+  ///
+  /// In es, this message translates to:
+  /// **'Salir'**
+  String get salir;
+
+  /// No description provided for @ajustes.
+  ///
+  /// In es, this message translates to:
+  /// **'Ajustes'**
+  String get ajustes;
+
+  /// No description provided for @estadoApp.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado de la App'**
+  String get estadoApp;
+
+  /// No description provided for @cerrarSesion.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerrar sesión'**
+  String get cerrarSesion;
+
+  /// No description provided for @hola.
+  ///
+  /// In es, this message translates to:
+  /// **'Hola'**
+  String get hola;
+
+  /// No description provided for @comunidad.
+  ///
+  /// In es, this message translates to:
+  /// **'Comunidad'**
+  String get comunidad;
+
+  /// No description provided for @queCompartir.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué te gustaría compartir?'**
+  String get queCompartir;
+
+  /// No description provided for @agregaPublicacion.
+  ///
+  /// In es, this message translates to:
+  /// **'Agrega una publicación'**
+  String get agregaPublicacion;
+
+  /// No description provided for @muroPublicaciones.
+  ///
+  /// In es, this message translates to:
+  /// **'Muro de Publicaciones'**
+  String get muroPublicaciones;
+
+  /// No description provided for @sinPublicaciones.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay publicaciones'**
+  String get sinPublicaciones;
+
+  /// No description provided for @desconocido.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconocido'**
+  String get desconocido;
+
+  /// No description provided for @estadoConectado.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectado a Internet'**
+  String get estadoConectado;
 }
 
 class _AppLocalizationsDelegate

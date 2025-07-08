@@ -1,7 +1,7 @@
-// 📦 Importaciones necesarias
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mi_vecino/l10n/app_localizations.dart';
 import 'package:mi_vecino/screens/login_screen.dart';
 import 'package:mi_vecino/screens/crear_publicacion_screen.dart';
 import 'package:mi_vecino/screens/acerca_app_screen.dart';
@@ -21,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String? comunidad;
   bool cargandoUsuario = true;
 
-  // 🔄 Cargar datos del usuario desde Firestore
   Future<void> cargarDatosUsuario() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
@@ -42,16 +41,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 📴 Confirmar cierre de sesión con diálogo
   Future<void> confirmarCerrarSesion() async {
+    final localizations = AppLocalizations.of(context)!;
+
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Cerrar Sesión"),
-        content: const Text("¿Estás seguro que deseas cerrar sesión?"),
+        title: Text(localizations.cerrarSesion),
+        content: Text(localizations.seguroCerrarSesion),
         actions: [
-          TextButton(child: const Text("Cancelar"), onPressed: () => Navigator.of(context).pop(false)),
-          ElevatedButton(child: const Text("Salir"), onPressed: () => Navigator.of(context).pop(true)),
+          TextButton(child: Text(localizations.cancelar), onPressed: () => Navigator.of(context).pop(false)),
+          ElevatedButton(child: Text(localizations.salir), onPressed: () => Navigator.of(context).pop(true)),
         ],
       ),
     );
@@ -76,6 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Scaffold(
       drawer: Drawer(
         child: ListView(
@@ -87,16 +89,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Colors.white,
                 child: Icon(Icons.person, size: 40, color: Colors.grey),
               ),
-              accountName: Text(nombre ?? 'Nombre', style: const TextStyle(fontSize: 18)),
-              accountEmail: Text(direccion ?? 'Dirección'),
+              accountName: Text(nombre ?? localizations.nombre, style: const TextStyle(fontSize: 18)),
+              accountEmail: Text(direccion ?? localizations.direccion),
             ),
-            ListTile(leading: const Icon(Icons.settings), title: const Text('Ajustes'), onTap: () {}),
-            ListTile(leading: const Icon(Icons.language), title: const Text('Idioma'), onTap: () {Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen()));}),
-            ListTile(leading: const Icon(Icons.info_outline), title: const Text('Acerca de la App'), onTap: () {Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen()));}),
-            ListTile(leading: const Icon(Icons.feedback_outlined), title: const Text('Sugerencias'), onTap: () {Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));}),
-            ListTile(leading: const Icon(Icons.wifi), title: const Text('Estado de la App'), subtitle: const Text("Conectado (Wi-Fi)"), onTap: () {}),
+            ListTile(leading: const Icon(Icons.settings), title: Text(localizations.ajustes), onTap: () {}),
+            ListTile(leading: const Icon(Icons.language), title: Text(localizations.idioma), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen()));
+            }),
+            ListTile(leading: const Icon(Icons.info_outline), title: Text(localizations.acercaDe), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen()));
+            }),
+            ListTile(leading: const Icon(Icons.feedback_outlined), title: Text(localizations.sugerencias), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));
+            }),
+            ListTile(leading: const Icon(Icons.wifi), title: Text(localizations.estadoApp), subtitle: Text(localizations.estadoConectado), onTap: () {}),
             const Divider(),
-            ListTile(leading: const Icon(Icons.logout), title: const Text('Cerrar Sesión'), onTap: confirmarCerrarSesion),
+            ListTile(leading: const Icon(Icons.logout), title: Text(localizations.cerrarSesion), onTap: confirmarCerrarSesion),
           ],
         ),
       ),
@@ -119,13 +127,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hola, ${nombre ?? '---'} 👋', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text('${localizations.hola}, ${nombre ?? '---'} 👋', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text('Dirección: ${direccion ?? '---'}'),
-                  Text('Comunidad: ${comunidad ?? '---'}'),
+                  Text('${localizations.direccion}: ${direccion ?? '---'}'),
+                  Text('${localizations.comunidad}: ${comunidad ?? '---'}'),
                   const SizedBox(height: 24),
 
-                  const Text('¿Qué quieres compartir?', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(localizations.queCompartir, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
 
                   GestureDetector(
@@ -140,20 +148,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         border: Border.all(color: const Color(0xFF3EC6A8), width: 1.2),
                       ),
                       child: Row(
-                        children: const [
-                          Icon(Icons.edit_note, color: Color(0xFF3EC6A8)),
-                          SizedBox(width: 10),
-                          Text('Agrega una publicación...', style: TextStyle(fontSize: 16, color: Colors.black54)),
+                        children: [
+                          const Icon(Icons.edit_note, color: Color(0xFF3EC6A8)),
+                          const SizedBox(width: 10),
+                          Text(localizations.agregaPublicacion, style: const TextStyle(fontSize: 16, color: Colors.black54)),
                         ],
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 24),
-                  const Text('Muro de publicaciones 🛎️', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(localizations.muroPublicaciones, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
 
-                  // 📡 Mostrar publicaciones en tiempo real desde Firebase
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance.collection('publicaciones').orderBy('fecha', descending: true).snapshots(),
                     builder: (context, snapshot) {
@@ -161,17 +168,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Text('Aún no hay publicaciones.');
+                        return Text(localizations.sinPublicaciones);
                       }
 
                       final publicaciones = snapshot.data!.docs;
                       return Column(
                         children: publicaciones.map((doc) {
                           final data = doc.data() as Map<String, dynamic>;
-                          final autor = data['autor'] ?? 'Desconocido'; // ✅ mostrar autor correcto
+                          final autor = data['autor'] ?? localizations.desconocido;
                           final fecha = data['fechaFormateada'] ?? '';
                           final mensaje = data['mensaje'] ?? '';
-                          final archivoUrl = data['archivoUrl']; // ✅ leer la imagen
+                          final archivoUrl = data['archivoUrl'];
 
                           return _publicacionUsuario(autor, fecha, mensaje, archivoUrl);
                         }).toList(),
@@ -184,7 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🧱 Widget modular para mostrar publicación con texto e imagen si existe
   Widget _publicacionUsuario(String autor, String fecha, String texto, String? archivoUrl) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -205,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(archivoUrl), // ✅ renderiza la imagen desde la URL
+              child: Image.network(archivoUrl),
             ),
           ]
         ],

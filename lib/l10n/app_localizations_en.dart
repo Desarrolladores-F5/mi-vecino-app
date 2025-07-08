@@ -134,4 +134,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yaTienesCuenta => 'Already have an account? Log in';
+
+  @override
+  String get seguroCerrarSesion => 'Are you sure you want to log out?';
+
+  @override
+  String get cancelar => 'Cancel';
+
+  @override
+  String get salir => 'Log out';
+
+  @override
+  String get ajustes => 'Settings';
+
+  @override
+  String get estadoApp => 'App Status';
+
+  @override
+  String get cerrarSesion => 'Log out';
+
+  @override
+  String get hola => 'Hello';
+
+  @override
+  String get comunidad => 'Community';
+
+  @override
+  String get queCompartir => 'What would you like to share?';
+
+  @override
+  String get agregaPublicacion => 'Add a post';
+
+  @override
+  String get muroPublicaciones => 'Post Wall';
+
+  @override
+  String get sinPublicaciones => 'No posts yet';
+
+  @override
+  String get desconocido => 'Unknown';
+
+  @override
+  String get estadoConectado => 'Connected to the Internet';
 }
