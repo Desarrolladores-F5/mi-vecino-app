@@ -73,6 +73,16 @@
   "mensajeVacio": "Por favor escribe un mensaje",
   "usuarioNoAutenticado": "Usuario no autenticado",
   "publicacionExitosa": "¡Publicación enviada con éxito!",
-  "errorPublicar": "Ocurrió un error al publicar"
-
+  "errorPublicar": "Ocurrió un error al publicar",
+  "estadoApp": "Estado de la App",
+  "versionApp": "Versión de la App",
+  "estadoConexion": "Estado de Conexión",
+  "estadoConectado": "Conectado",
+  "estadoDesconectado": "Sin conexión",
+  "usuarioLogueado": "Usuario logueado",
+  "correoUsuario": "Correo electrónico",
+  "desconocido": "Desconocido",
+  "conectado": "Conectado",
+  "desconectado": "Desconectado",
+  "correoElectronico": "Correo electrónico"
 }

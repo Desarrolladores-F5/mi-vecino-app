@@ -175,7 +175,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desconocido => 'Unknown';
 
   @override
-  String get estadoConectado => 'Connected to the Internet';
+  String get estadoConectado => 'Connected';
 
   @override
   String get descripcionApp =>
@@ -229,4 +229,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorPublicar => 'An error occurred while publishing';
+
+  @override
+  String get versionApp => 'App Version';
+
+  @override
+  String get estadoConexion => 'Connection Status';
+
+  @override
+  String get estadoDesconectado => 'No connection';
+
+  @override
+  String get usuarioLogueado => 'Logged-in user';
+
+  @override
+  String get correoUsuario => 'Email';
+
+  @override
+  String get conectado => 'Connected';
+
+  @override
+  String get desconectado => 'Disconnected';
+
+  @override
+  String get correoElectronico => 'Email address';
 }

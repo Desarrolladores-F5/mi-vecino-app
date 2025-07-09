@@ -431,7 +431,7 @@ abstract class AppLocalizations {
   /// No description provided for @estadoConectado.
   ///
   /// In es, this message translates to:
-  /// **'Conectado a Internet'**
+  /// **'Conectado'**
   String get estadoConectado;
 
   /// No description provided for @descripcionApp.
@@ -535,6 +535,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Ocurrió un error al publicar'**
   String get errorPublicar;
+
+  /// No description provided for @versionApp.
+  ///
+  /// In es, this message translates to:
+  /// **'Versión de la App'**
+  String get versionApp;
+
+  /// No description provided for @estadoConexion.
+  ///
+  /// In es, this message translates to:
+  /// **'Estado de Conexión'**
+  String get estadoConexion;
+
+  /// No description provided for @estadoDesconectado.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conexión'**
+  String get estadoDesconectado;
+
+  /// No description provided for @usuarioLogueado.
+  ///
+  /// In es, this message translates to:
+  /// **'Usuario logueado'**
+  String get usuarioLogueado;
+
+  /// No description provided for @correoUsuario.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get correoUsuario;
+
+  /// No description provided for @conectado.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectado'**
+  String get conectado;
+
+  /// No description provided for @desconectado.
+  ///
+  /// In es, this message translates to:
+  /// **'Desconectado'**
+  String get desconectado;
+
+  /// No description provided for @correoElectronico.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get correoElectronico;
 }
 
 class _AppLocalizationsDelegate

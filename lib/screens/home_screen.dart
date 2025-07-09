@@ -7,6 +7,7 @@ import 'package:mi_vecino/screens/crear_publicacion_screen.dart';
 import 'package:mi_vecino/screens/acerca_app_screen.dart';
 import 'package:mi_vecino/screens/sugerencias_screen.dart';
 import 'package:mi_vecino/screens/idioma_screen.dart';
+import 'package:mi_vecino/screens/estado_app_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,7 +103,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(leading: const Icon(Icons.feedback_outlined), title: Text(localizations.sugerencias), onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));
             }),
-            ListTile(leading: const Icon(Icons.wifi), title: Text(localizations.estadoApp), subtitle: Text(localizations.estadoConectado), onTap: () {}),
+            ListTile(leading: const Icon(Icons.wifi), title: Text(localizations.estadoApp), subtitle: Text(localizations.estadoConectado), onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const EstadoAppScreen()));}),
             const Divider(),
             ListTile(leading: const Icon(Icons.logout), title: Text(localizations.cerrarSesion), onTap: confirmarCerrarSesion),
           ],

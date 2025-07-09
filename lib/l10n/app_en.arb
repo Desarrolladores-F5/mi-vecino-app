@@ -73,5 +73,16 @@
   "mensajeVacio": "Please enter a message",
   "usuarioNoAutenticado": "User not authenticated",
   "publicacionExitosa": "Post published successfully!",
-  "errorPublicar": "An error occurred while publishing"
+  "errorPublicar": "An error occurred while publishing",
+  "estadoApp": "App Status",
+  "versionApp": "App Version",
+  "estadoConexion": "Connection Status",
+  "estadoConectado": "Connected",
+  "estadoDesconectado": "No connection",
+  "usuarioLogueado": "Logged-in user",
+  "correoUsuario": "Email",
+  "desconocido": "Unknown",
+  "conectado": "Connected",
+  "desconectado": "Disconnected",
+  "correoElectronico": "Email address"
 }
