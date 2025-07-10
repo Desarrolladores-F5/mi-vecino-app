@@ -40,7 +40,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
   Future<void> _publicar() async {
     final mensaje = _mensajeController.text.trim();
     final user = FirebaseAuth.instance.currentUser;
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     if (mensaje.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,7 +117,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),

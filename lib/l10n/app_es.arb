@@ -84,5 +84,8 @@
   "desconocido": "Desconocido",
   "conectado": "Conectado",
   "desconectado": "Desconectado",
-  "correoElectronico": "Correo electrónico"
+  "correoElectronico": "Correo electrónico",
+  "cambiosGuardados": "Cambios guardados correctamente.",
+  "activarNotificaciones": "Activar notificaciones cuando alguien publique",
+  "guardarCambios": "Guardar cambios"
 }

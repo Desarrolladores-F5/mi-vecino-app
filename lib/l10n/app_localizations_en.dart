@@ -253,4 +253,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get correoElectronico => 'Email address';
+
+  @override
+  String get cambiosGuardados => 'Changes saved successfully.';
+
+  @override
+  String get activarNotificaciones => 'Enable notifications when someone posts';
+
+  @override
+  String get guardarCambios => 'Save changes';
 }

@@ -8,6 +8,7 @@ import 'package:mi_vecino/screens/acerca_app_screen.dart';
 import 'package:mi_vecino/screens/sugerencias_screen.dart';
 import 'package:mi_vecino/screens/idioma_screen.dart';
 import 'package:mi_vecino/screens/estado_app_screen.dart';
+import 'package:mi_vecino/screens/ajustes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,18 +21,22 @@ class _HomeScreenState extends State<HomeScreen> {
   String? nombre;
   String? direccion;
   String? comunidad;
+  String? fotoUrl; // URL de la foto de perfil
   bool cargandoUsuario = true;
 
+  // 🔁 Cargar datos del usuario desde Firestore
   Future<void> cargarDatosUsuario() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       try {
         final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
         if (doc.exists) {
+          final data = doc.data();
           setState(() {
-            nombre = doc.data()?['nombre'];
-            direccion = doc.data()?['direccion'];
-            comunidad = doc.data()?['nombre_comunidad'];
+            nombre = data?['nombre'];
+            direccion = data?['direccion'];
+            comunidad = data?['nombre_comunidad'];
+            fotoUrl = data?['fotoPerfil']; // campo para la imagen
             cargandoUsuario = false;
           });
         }
@@ -42,9 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // 🔐 Confirmación antes de cerrar sesión
   Future<void> confirmarCerrarSesion() async {
-    final localizations = AppLocalizations.of(context)!;
-
+    final localizations = AppLocalizations.of(context);
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -56,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-
     if (confirmar == true) {
       await FirebaseAuth.instance.signOut();
       if (mounted) {
@@ -77,39 +81,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            // 📌 Encabezado del Drawer con imagen personalizada
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(color: Color(0xFF3EC6A8)),
-              currentAccountPicture: const CircleAvatar(
+              currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, size: 40, color: Colors.grey),
+                backgroundImage: fotoUrl != null ? NetworkImage(fotoUrl!) : null,
+                child: fotoUrl == null
+                    ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                    : null,
               ),
               accountName: Text(nombre ?? localizations.nombre, style: const TextStyle(fontSize: 18)),
               accountEmail: Text(direccion ?? localizations.direccion),
             ),
-            ListTile(leading: const Icon(Icons.settings), title: Text(localizations.ajustes), onTap: () {}),
-            ListTile(leading: const Icon(Icons.language), title: Text(localizations.idioma), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen()));
-            }),
-            ListTile(leading: const Icon(Icons.info_outline), title: Text(localizations.acercaDe), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen()));
-            }),
-            ListTile(leading: const Icon(Icons.feedback_outlined), title: Text(localizations.sugerencias), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));
-            }),
-            ListTile(leading: const Icon(Icons.wifi), title: Text(localizations.estadoApp), subtitle: Text(localizations.estadoConectado), onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const EstadoAppScreen()));}),
+
+            // 🔧 Opciones del menú
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text(localizations.ajustes),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AjustesScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(localizations.idioma),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(localizations.acercaDe),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.feedback_outlined),
+              title: Text(localizations.sugerencias),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.wifi),
+              title: Text(localizations.estadoApp),
+              subtitle: Text(localizations.estadoConectado),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const EstadoAppScreen()));
+              },
+            ),
             const Divider(),
-            ListTile(leading: const Icon(Icons.logout), title: Text(localizations.cerrarSesion), onTap: confirmarCerrarSesion),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: Text(localizations.cerrarSesion),
+              onTap: confirmarCerrarSesion,
+            ),
           ],
         ),
       ),
+
       appBar: AppBar(
         title: const Text(
           'Mi Vecino',
@@ -122,6 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: const Color(0xFF3EC6A8),
       ),
+
       body: cargandoUsuario
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -129,7 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${localizations.hola}, ${nombre ?? '---'} 👋', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text('${localizations.hola}, ${nombre ?? '---'} 👋',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text('${localizations.direccion}: ${direccion ?? '---'}'),
                   Text('${localizations.comunidad}: ${comunidad ?? '---'}'),
@@ -153,7 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           const Icon(Icons.edit_note, color: Color(0xFF3EC6A8)),
                           const SizedBox(width: 10),
-                          Text(localizations.agregaPublicacion, style: const TextStyle(fontSize: 16, color: Colors.black54)),
+                          Text(localizations.agregaPublicacion,
+                              style: const TextStyle(fontSize: 16, color: Colors.black54)),
                         ],
                       ),
                     ),
@@ -193,6 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // 🧱 Widget que representa una publicación del usuario
   Widget _publicacionUsuario(String autor, String fecha, String texto, String? archivoUrl) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

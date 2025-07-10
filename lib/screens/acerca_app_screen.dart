@@ -28,7 +28,7 @@ class _AcercaAppScreenState extends State<AcercaAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(

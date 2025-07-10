@@ -583,6 +583,24 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Correo electrónico'**
   String get correoElectronico;
+
+  /// No description provided for @cambiosGuardados.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambios guardados correctamente.'**
+  String get cambiosGuardados;
+
+  /// No description provided for @activarNotificaciones.
+  ///
+  /// In es, this message translates to:
+  /// **'Activar notificaciones cuando alguien publique'**
+  String get activarNotificaciones;
+
+  /// No description provided for @guardarCambios.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar cambios'**
+  String get guardarCambios;
 }
 
 class _AppLocalizationsDelegate

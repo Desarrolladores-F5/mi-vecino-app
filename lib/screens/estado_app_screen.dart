@@ -6,7 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mi_vecino/l10n/app_localizations.dart';
 
 class EstadoAppScreen extends StatefulWidget {
-  const EstadoAppScreen({Key? key}) : super(key: key);
+  const EstadoAppScreen({super.key});
 
   @override
   _EstadoAppScreenState createState() => _EstadoAppScreenState();
@@ -50,15 +50,15 @@ class _EstadoAppScreenState extends State<EstadoAppScreen> {
       if (doc.exists && doc.data()!.containsKey('nombre')) {
         nombre = doc['nombre'];
       } else {
-        nombre = AppLocalizations.of(context)!.desconocido;
+        nombre = AppLocalizations.of(context).desconocido;
       }
     }
 
     setState(() {
       _version = version;
       _conexion = conectado
-          ? AppLocalizations.of(context)!.conectado
-          : AppLocalizations.of(context)!.desconectado;
+          ? AppLocalizations.of(context).conectado
+          : AppLocalizations.of(context).desconectado;
       _nombre = nombre;
       _correo = correo;
     });
@@ -66,7 +66,7 @@ class _EstadoAppScreenState extends State<EstadoAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(

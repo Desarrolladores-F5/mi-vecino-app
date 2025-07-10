@@ -34,14 +34,14 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.sugerenciaEnviada)),
+          SnackBar(content: Text(AppLocalizations.of(context).sugerenciaEnviada)),
         );
       }
     } catch (e) {
       print('❌ Error al enviar sugerencia: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.errorSugerencia)),
+          SnackBar(content: Text(AppLocalizations.of(context).errorSugerencia)),
         );
       }
     } finally {
@@ -51,7 +51,7 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(

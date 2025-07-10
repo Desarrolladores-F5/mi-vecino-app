@@ -84,5 +84,8 @@
   "desconocido": "Unknown",
   "conectado": "Connected",
   "desconectado": "Disconnected",
-  "correoElectronico": "Email address"
+  "correoElectronico": "Email address",
+  "cambiosGuardados": "Changes saved successfully.",
+  "activarNotificaciones": "Enable notifications when someone posts",
+  "guardarCambios": "Save changes"
 }
