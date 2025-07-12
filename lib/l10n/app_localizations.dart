@@ -601,6 +601,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Guardar cambios'**
   String get guardarCambios;
+
+  /// No description provided for @alarmaVecinal.
+  ///
+  /// In es, this message translates to:
+  /// **'Alarma Vecinal'**
+  String get alarmaVecinal;
+
+  /// No description provided for @activarAlarmaVecinal.
+  ///
+  /// In es, this message translates to:
+  /// **'ACTIVAR ALARMA VECINAL'**
+  String get activarAlarmaVecinal;
 }
 
 class _AppLocalizationsDelegate

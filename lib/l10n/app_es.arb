@@ -87,5 +87,8 @@
   "correoElectronico": "Correo electrónico",
   "cambiosGuardados": "Cambios guardados correctamente.",
   "activarNotificaciones": "Activar notificaciones cuando alguien publique",
-  "guardarCambios": "Guardar cambios"
+  "guardarCambios": "Guardar cambios",
+  "alarmaVecinal": "Alarma Vecinal",
+  "alarmaVecinal": "Alarma Vecinal",
+  "activarAlarmaVecinal": "ACTIVAR ALARMA VECINAL"
 }

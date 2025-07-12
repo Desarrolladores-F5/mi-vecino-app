@@ -4,7 +4,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Localización
+import 'package:intl/intl.dart';
+import 'package:mi_vecino/l10n/app_localizations.dart';
 
 class CrearPublicacionScreen extends StatefulWidget {
   const CrearPublicacionScreen({super.key});
@@ -61,8 +62,11 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
     });
 
     String? urlArchivo;
+    String? fotoPerfil;
+    String autor = user.email ?? 'Desconocido'; // Por defecto
 
     try {
+      // 📥 Subir archivo a Firebase Storage si fue seleccionado
       if (_archivoSeleccionado != null) {
         final nombreArchivo = _archivoSeleccionado!.name;
         final referenciaStorage = FirebaseStorage.instance
@@ -77,13 +81,32 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
         urlArchivo = await referenciaStorage.getDownloadURL();
       }
 
+      // 🔍 Obtener nombre real y foto de perfil desde Firestore
+      final snapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(user.uid)
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        autor = data?['nombre'] ?? autor;
+        fotoPerfil = data?['fotoPerfil'];
+      }
+
+      // 🕒 Fecha y hora formateada para mostrarla
+      final DateTime ahora = DateTime.now();
+      final String fechaFormateada = DateFormat('dd-MM-yyyy – HH:mm').format(ahora);
+
+      // 🔥 Subir la publicación
       await FirebaseFirestore.instance.collection('publicaciones').add({
         'mensaje': mensaje,
-        'fecha': DateTime.now(),
+        'fecha': ahora,
+        'fechaFormateada': fechaFormateada,
         'archivoUrl': urlArchivo ?? '',
         'archivoNombre': _archivoSeleccionado?.name ?? '',
-        'autor': user.displayName ?? user.email ?? 'Desconocido',
+        'autor': autor,
         'uid': user.uid,
+        'fotoPerfil': fotoPerfil ?? '',
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -91,6 +114,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
       );
       Navigator.pop(context);
     } catch (e) {
+      print('❌ Error al publicar: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(localizations.errorPublicar)),
       );

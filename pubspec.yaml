@@ -50,6 +50,7 @@ dependencies:
   firebase_app_check: ^0.3.2+7
   file_selector: ^1.0.3   # Para seleccionar archivos
   path: ^1.9.0          # Para manipular rutas de archivos
+  audioplayers: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +77,7 @@ flutter:
 
   assets:
     - assets/logo.png
+    - assets/sounds/alarma_vecinal_chat_ready.mp3
 
   fonts:
     - family: MiVecinoFont

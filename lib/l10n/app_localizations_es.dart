@@ -264,4 +264,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get guardarCambios => 'Guardar cambios';
+
+  @override
+  String get alarmaVecinal => 'Alarma Vecinal';
+
+  @override
+  String get activarAlarmaVecinal => 'ACTIVAR ALARMA VECINAL';
 }

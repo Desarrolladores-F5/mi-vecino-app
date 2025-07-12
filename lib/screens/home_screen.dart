@@ -1,3 +1,4 @@
+// Incluye: Drawer + Traducciones + Reacciones + Respuestas + Alarma Listener
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +10,8 @@ import 'package:mi_vecino/screens/sugerencias_screen.dart';
 import 'package:mi_vecino/screens/idioma_screen.dart';
 import 'package:mi_vecino/screens/estado_app_screen.dart';
 import 'package:mi_vecino/screens/ajustes_screen.dart';
+import 'package:mi_vecino/screens/alarma_screen.dart';
+import 'package:mi_vecino/utils/alarma_listener.dart'; // ✅ Listener modular de alarma
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,10 +24,19 @@ class _HomeScreenState extends State<HomeScreen> {
   String? nombre;
   String? direccion;
   String? comunidad;
-  String? fotoUrl; // URL de la foto de perfil
+  String? fotoUrl;
   bool cargandoUsuario = true;
 
-  // 🔁 Cargar datos del usuario desde Firestore
+  Map<String, bool> mostrarFormulario = {};
+  Map<String, TextEditingController> controladoresRespuesta = {};
+
+  @override
+  void initState() {
+    super.initState();
+    cargarDatosUsuario();
+    iniciarAlarmaListener(context); // ✅ Activa listener al entrar a home_screen
+  }
+
   Future<void> cargarDatosUsuario() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
@@ -36,18 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
             nombre = data?['nombre'];
             direccion = data?['direccion'];
             comunidad = data?['nombre_comunidad'];
-            fotoUrl = data?['fotoPerfil']; // campo para la imagen
+            fotoUrl = data?['fotoPerfil'];
             cargandoUsuario = false;
           });
         }
       } catch (e) {
-        print('❌ Error al cargar datos del usuario: $e');
         setState(() => cargandoUsuario = false);
       }
     }
   }
 
-  // 🔐 Confirmación antes de cerrar sesión
   Future<void> confirmarCerrarSesion() async {
     final localizations = AppLocalizations.of(context);
     final confirmar = await showDialog<bool>(
@@ -73,10 +83,54 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    cargarDatosUsuario();
+  Future<void> _responderAPublicacion(String docId, String texto) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final usuario = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
+    final nombreUsuario = usuario['nombre'] ?? 'Anónimo';
+
+    await FirebaseFirestore.instance
+        .collection('publicaciones')
+        .doc(docId)
+        .collection('respuestas')
+        .add({
+      'texto': texto,
+      'autor': nombreUsuario,
+      'fecha': DateTime.now(),
+    });
+
+    controladoresRespuesta[docId]?.clear();
+    setState(() {
+      mostrarFormulario[docId] = false;
+    });
+  }
+
+  Future<void> _toggleLike(String docId, List likes, List dislikes) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final docRef = FirebaseFirestore.instance.collection('publicaciones').doc(docId);
+    if (likes.contains(uid)) {
+      await docRef.update({'likes': FieldValue.arrayRemove([uid])});
+    } else {
+      await docRef.update({
+        'likes': FieldValue.arrayUnion([uid]),
+        'dislikes': FieldValue.arrayRemove([uid]),
+      });
+    }
+  }
+
+  Future<void> _toggleDislike(String docId, List likes, List dislikes) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final docRef = FirebaseFirestore.instance.collection('publicaciones').doc(docId);
+    if (dislikes.contains(uid)) {
+      await docRef.update({'dislikes': FieldValue.arrayRemove([uid])});
+    } else {
+      await docRef.update({
+        'dislikes': FieldValue.arrayUnion([uid]),
+        'likes': FieldValue.arrayRemove([uid]),
+      });
+    }
   }
 
   @override
@@ -88,56 +142,46 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // 📌 Encabezado del Drawer con imagen personalizada
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(color: Color(0xFF3EC6A8)),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
                 backgroundImage: fotoUrl != null ? NetworkImage(fotoUrl!) : null,
-                child: fotoUrl == null
-                    ? const Icon(Icons.person, size: 40, color: Colors.grey)
-                    : null,
+                child: fotoUrl == null ? const Icon(Icons.person, size: 40, color: Colors.grey) : null,
               ),
               accountName: Text(nombre ?? localizations.nombre, style: const TextStyle(fontSize: 18)),
               accountEmail: Text(direccion ?? localizations.direccion),
             ),
-
-            // 🔧 Opciones del menú
             ListTile(
               leading: const Icon(Icons.settings),
               title: Text(localizations.ajustes),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AjustesScreen()));
-              },
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AjustesScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.language),
               title: Text(localizations.idioma),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen()));
-              },
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.info_outline),
               title: Text(localizations.acercaDe),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen()));
-              },
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.feedback_outlined),
               title: Text(localizations.sugerencias),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen()));
-              },
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.campaign),
+              title: Text(localizations.alarmaVecinal),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AlarmaScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.wifi),
               title: Text(localizations.estadoApp),
               subtitle: Text(localizations.estadoConectado),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const EstadoAppScreen()));
-              },
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EstadoAppScreen())),
             ),
             const Divider(),
             ListTile(
@@ -148,10 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
       appBar: AppBar(
-        title: const Text(
-          'Mi Vecino',
+        title: const Text('Mi Vecino',
           style: TextStyle(
             fontFamily: 'MiVecinoFont',
             fontSize: 24,
@@ -161,7 +203,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: const Color(0xFF3EC6A8),
       ),
-
       body: cargandoUsuario
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -175,14 +216,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('${localizations.direccion}: ${direccion ?? '---'}'),
                   Text('${localizations.comunidad}: ${comunidad ?? '---'}'),
                   const SizedBox(height: 24),
-
                   Text(localizations.queCompartir, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CrearPublicacionScreen()));
-                    },
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CrearPublicacionScreen())),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                       decoration: BoxDecoration(
@@ -194,37 +231,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           const Icon(Icons.edit_note, color: Color(0xFF3EC6A8)),
                           const SizedBox(width: 10),
-                          Text(localizations.agregaPublicacion,
-                              style: const TextStyle(fontSize: 16, color: Colors.black54)),
+                          Text(localizations.agregaPublicacion, style: const TextStyle(fontSize: 16, color: Colors.black54)),
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
                   Text(localizations.muroPublicaciones, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance.collection('publicaciones').orderBy('fecha', descending: true).snapshots(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Text(localizations.sinPublicaciones);
-                      }
+                      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Text(localizations.sinPublicaciones);
 
                       final publicaciones = snapshot.data!.docs;
                       return Column(
                         children: publicaciones.map((doc) {
                           final data = doc.data() as Map<String, dynamic>;
-                          final autor = data['autor'] ?? localizations.desconocido;
-                          final fecha = data['fechaFormateada'] ?? '';
-                          final mensaje = data['mensaje'] ?? '';
-                          final archivoUrl = data['archivoUrl'];
-
-                          return _publicacionUsuario(autor, fecha, mensaje, archivoUrl);
+                          return _publicacionConRespuestas(
+                            doc.id,
+                            data['autor'] ?? localizations.desconocido,
+                            data['fechaFormateada'] ?? '',
+                            data['mensaje'] ?? '',
+                            data['archivoUrl'],
+                            data['fotoPerfil'],
+                            List<String>.from(data['likes'] ?? []),
+                            List<String>.from(data['dislikes'] ?? []),
+                          );
                         }).toList(),
                       );
                     },
@@ -235,32 +269,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 🧱 Widget que representa una publicación del usuario
-  Widget _publicacionUsuario(String autor, String fecha, String texto, String? archivoUrl) {
+  Widget _publicacionConRespuestas(String docId, String autor, String fecha, String texto, String? archivoUrl, String? fotoPerfil, List likes, List dislikes) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final yaDioLike = likes.contains(uid);
+    final yaDioDislike = dislikes.contains(uid);
+    final controller = controladoresRespuesta.putIfAbsent(docId, () => TextEditingController());
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF6F0F6),
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(autor, style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (fecha.isNotEmpty) Text(fecha, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 8),
-          Text(texto),
-          if (archivoUrl != null && archivoUrl.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          CircleAvatar(
+            backgroundImage: fotoPerfil != null ? NetworkImage(fotoPerfil) : null,
+            child: fotoPerfil == null ? const Icon(Icons.person) : null,
+          ),
+          const SizedBox(width: 10),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(autor, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(fecha, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ])
+        ]),
+        const SizedBox(height: 10),
+        Text(texto),
+        if (archivoUrl != null && archivoUrl.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.network(archivoUrl),
             ),
-          ]
-        ],
-      ),
+          ),
+        const SizedBox(height: 10),
+        Row(children: [
+          IconButton(icon: Icon(Icons.thumb_up, color: yaDioLike ? Colors.green : Colors.grey), onPressed: () => _toggleLike(docId, likes, dislikes)),
+          Text('${likes.length}'),
+          IconButton(icon: Icon(Icons.thumb_down, color: yaDioDislike ? Colors.red : Colors.grey), onPressed: () => _toggleDislike(docId, likes, dislikes)),
+          Text('${dislikes.length}'),
+          const Spacer(),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                mostrarFormulario[docId] = !(mostrarFormulario[docId] ?? false);
+              });
+            },
+            child: const Text('Responder'),
+          )
+        ]),
+        if (mostrarFormulario[docId] == true)
+          Column(children: [
+            TextField(controller: controller, decoration: const InputDecoration(labelText: 'Escribe tu respuesta')),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () => _responderAPublicacion(docId, controller.text.trim()),
+              child: const Text('Enviar respuesta'),
+            ),
+          ]),
+        const Divider(height: 24),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('publicaciones').doc(docId).collection('respuestas').orderBy('fecha').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox.shrink();
+            final respuestas = snapshot.data!.docs;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: respuestas.map((r) {
+                final d = r.data() as Map<String, dynamic>;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.reply, size: 18, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Expanded(child: Text('${d['autor']}: ${d['texto']}')),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ]),
     );
   }
 }

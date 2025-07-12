@@ -87,5 +87,8 @@
   "correoElectronico": "Email address",
   "cambiosGuardados": "Changes saved successfully.",
   "activarNotificaciones": "Enable notifications when someone posts",
-  "guardarCambios": "Save changes"
+  "guardarCambios": "Save changes",
+  "alarmaVecinal": "Neighborhood Alarm",
+  "alarmaVecinal": "Neighborhood Alarm",
+  "activarAlarmaVecinal": "ACTIVATE NEIGHBORHOOD ALARM"
 }
