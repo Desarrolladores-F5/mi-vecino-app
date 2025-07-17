@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// ✅ Listener modular para alarma comunitaria
 Future<void> iniciarAlarmaListener(BuildContext context) async {
   final usuario = FirebaseAuth.instance.currentUser;
-  final AudioPlayer _player = AudioPlayer();
+  final AudioPlayer player = AudioPlayer();
 
   if (usuario == null) return;
 
@@ -33,7 +33,7 @@ Future<void> iniciarAlarmaListener(BuildContext context) async {
 
       if (activa) {
         // ✅ Reproducir sonido de alarma
-        await _player.play(
+        await player.play(
           AssetSource('sounds/alarma_vecinal_chat_ready.mp3'),
         );
 

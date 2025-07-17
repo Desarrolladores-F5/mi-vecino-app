@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart'; // 🌐 Traducciones generadas
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'utils/firebase_messaging_helper.dart'; // ✅ Ayuda a manejar notificaciones FCM
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ Notificaciones locales
 
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
@@ -16,7 +18,11 @@ import 'screens/idioma_screen.dart'; // 🌍 Pantalla para cambiar idioma
 // 🔑 Clave global para acceder al estado de la app y cambiar idioma
 final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
 
-void main() async {
+// ✅ Canal de notificaciones (necesario para Android)
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 🧱 Asegura que Flutter esté listo
 
   // 🔥 Inicializa Firebase
@@ -24,10 +30,23 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 🛡️ Habilita App Check (modo debug por ahora)
+  // 🛡️ Activa App Check (modo debug por ahora)
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );
+
+  // 📩 Inicializa notificaciones locales
+  const AndroidInitializationSettings androidSettings =
+      AndroidInitializationSettings('@mipmap/ic_launcher'); // 🔔 Ícono de la notificación
+
+  const InitializationSettings initSettings = InitializationSettings(
+    android: androidSettings,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
+
+  // 🚀 Inicializa Firebase Messaging y escucha mensajes
+  await setupFCM(flutterLocalNotificationsPlugin);
 
   // 🚀 Lanza la aplicación con clave global
   runApp(MiVecinoApp(key: appKey));
@@ -53,7 +72,7 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(      
+    return MaterialApp(
       title: 'Mi Vecino',
       debugShowCheckedModeBanner: false,
 
@@ -64,27 +83,24 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
       ),
 
       locale: _locale, // 🌐 Idioma actual
-      localizationsDelegates: const [ // 📚 Delegados de traducción
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
-      supportedLocales: const [ // 🌎 Idiomas disponibles
+      supportedLocales: const [
         Locale('es'),
         Locale('en'),
       ],
-
-      // 🧠 Selección automática del idioma si no hay uno forzado
       localeResolutionCallback: (locale, supportedLocales) {
-        if (_locale != null) return _locale; // ✅ Si hay idioma forzado, úsalo
+        if (_locale != null) return _locale;
         for (var supportedLocale in supportedLocales) {
           if (supportedLocale.languageCode == locale?.languageCode) {
             return supportedLocale;
           }
         }
-        return supportedLocales.first; // Por defecto: español
+        return supportedLocales.first;
       },
 
       // 🧭 Rutas de navegación

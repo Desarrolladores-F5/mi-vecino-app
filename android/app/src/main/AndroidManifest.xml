@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/> <!-- 🔁 Agrega connectivity plus --> 
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>  <!-- evita que la app entre en suspension --> 
     
     <application
         android:label="mi_vecino"
@@ -37,6 +38,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- 🔔 Servicios para FCM -->
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
