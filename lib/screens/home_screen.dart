@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(localizations.muroPublicaciones, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('publicaciones').orderBy('fecha', descending: true).snapshots(),
+                    stream: FirebaseFirestore.instance.collection('publicaciones').where('nombre_comunidad', isEqualTo: comunidad?.trim()).orderBy('fecha', descending: true).snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Text(localizations.sinPublicaciones);

@@ -30,7 +30,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 🛡️ Activa App Check (modo debug por ahora)
+  // 🛡️ Activa App Check (modo debug por ahora, al publicar cambiar por androidProvider: AndroidProvider.playIntegrity,)
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart'; // 🧱 UI principal de Flutter
-import 'package:firebase_auth/firebase_auth.dart'; // 🔐 Autenticación con Firebase
-import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Soporte de idiomas
+import 'package:firebase_auth/firebase_auth.dart'; // 🔐 Autenticación
+import 'package:cloud_firestore/cloud_firestore.dart'; // 📄 Firestore
+import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 Notificaciones push
+import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Traducciones
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,13 +13,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>(); // 🔒 Clave del formulario
-  final _emailController = TextEditingController(); // 📧 Controlador email
-  final _passwordController = TextEditingController(); // 🔑 Controlador contraseña
+  final _emailController = TextEditingController(); // 📧 Email
+  final _passwordController = TextEditingController(); // 🔑 Contraseña
 
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  // 🕒 Genera saludo dinámico traducido según la hora
+  // 🕒 Saludo dinámico traducido según hora
   String _getSaludo() {
     final hora = DateTime.now().hour;
     final localizations = AppLocalizations.of(context);
@@ -26,17 +28,43 @@ class _LoginScreenState extends State<LoginScreen> {
     return localizations.buenasNoches;
   }
 
-  // 🔐 Inicia sesión con Firebase Auth
+  // 🔐 Lógica de login
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
+        // 1. Autenticación con Firebase
+        final credenciales = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
+        final uid = credenciales.user!.uid;
+
+        // 2. Obtenemos el documento del usuario
+        final snapshot = await FirebaseFirestore.instance
+            .collection('usuarios')
+            .doc(uid)
+            .get();
+
+        if (snapshot.exists) {
+          final datos = snapshot.data()!;
+          final nombreComunidad = datos['nombre_comunidad'];
+
+          // 🔁 Transformamos el nombre de comunidad para usarlo como topic válido
+          final topicSeguro = nombreComunidad
+              .toLowerCase()       // Convertir todo a minúsculas
+              .replaceAll(' ', '_') // Reemplazar espacios por guiones bajos
+              .trim();              // Eliminar espacios iniciales/finales
+
+          // 3. Suscripción al topic de FCM según comunidad
+          await FirebaseMessaging.instance
+              .subscribeToTopic(topicSeguro);
+        }
+
+        // 4. Redirección a la pantalla principal
         Navigator.pushReplacementNamed(context, '/home');
       } on FirebaseAuthException catch (e) {
         String mensaje = AppLocalizations.of(context).errorGenerico;
@@ -73,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
 
                 Text(
-                  _getSaludo(), // 👋 Saludo según la hora
+                  _getSaludo(),
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -82,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // 📧 Campo de correo
+                // 📧 Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -99,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 🔑 Campo de contraseña
+                // 🔑 Contraseña
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,

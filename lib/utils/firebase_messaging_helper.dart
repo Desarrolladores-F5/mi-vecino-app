@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // Necesario para background handler
 
 Future<void> setupFCM(FlutterLocalNotificationsPlugin fln) async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -34,12 +35,14 @@ Future<void> setupFCM(FlutterLocalNotificationsPlugin fln) async {
     }
   });
 
-  // 🛑 También puedes manejar mensajes en segundo plano si quieres:
-  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // ✅ Escucha mensajes cuando la app está en segundo plano o terminada
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 }
 
-// (Opcional) Si quieres usar mensajes en segundo plano, define esta función:
-// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//   await Firebase.initializeApp();
-//   // Puedes manejar datos aquí
-// }
+// ✅ Handler para mensajes en segundo plano
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(); // Requerido para acceder a Firebase en background
+
+  // Aquí puedes manejar datos del mensaje si necesitas
+  print('📩 Mensaje en segundo plano: ${message.messageId}');
+}
