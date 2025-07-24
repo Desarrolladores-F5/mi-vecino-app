@@ -613,6 +613,36 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'ACTIVAR ALARMA VECINAL'**
   String get activarAlarmaVecinal;
+
+  /// No description provided for @telefonosEmergencia.
+  ///
+  /// In es, this message translates to:
+  /// **'Teléfonos de Emergencia'**
+  String get telefonosEmergencia;
+
+  /// No description provided for @carabineros.
+  ///
+  /// In es, this message translates to:
+  /// **'Carabineros de Chile'**
+  String get carabineros;
+
+  /// No description provided for @bomberos.
+  ///
+  /// In es, this message translates to:
+  /// **'Bomberos'**
+  String get bomberos;
+
+  /// No description provided for @samu.
+  ///
+  /// In es, this message translates to:
+  /// **'SAMU'**
+  String get samu;
+
+  /// No description provided for @llamar.
+  ///
+  /// In es, this message translates to:
+  /// **'Llamar'**
+  String get llamar;
 }
 
 class _AppLocalizationsDelegate

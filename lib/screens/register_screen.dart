@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart'; // 🧱 UI
-import 'package:firebase_auth/firebase_auth.dart'; // 🔐 Auth
-import 'package:cloud_firestore/cloud_firestore.dart'; // ☁️ Firestore
-import 'package:awesome_dialog/awesome_dialog.dart'; // 💬 Diálogos bonitos
-import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Traducciones
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:mi_vecino/l10n/app_localizations.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,30 +21,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  // 📝 Registro de usuario con validación de dirección
+  // 📝 Registro de usuario (sin límite por dirección)
   Future<void> _registerUser() async {
     if (_formKey.currentState!.validate()) {
-      final direccion = _direccionController.text.trim();
       final localizations = AppLocalizations.of(context);
 
       try {
-        final snapshot = await FirebaseFirestore.instance
-            .collection('usuarios')
-            .where('direccion', isEqualTo: direccion)
-            .get();
-
-        if (snapshot.docs.length >= 2) {
-          AwesomeDialog(
-            context: context,
-            dialogType: DialogType.warning,
-            animType: AnimType.rightSlide,
-            title: localizations.limiteAlcanzado,
-            desc: localizations.maximoDosPorDireccion,
-            btnOkOnPress: () {},
-          ).show();
-          return;
-        }
-
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -57,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             .set({
           'nombre': _nombreController.text.trim(),
           'apellido': _apellidoController.text.trim(),
-          'direccion': direccion,
+          'direccion': _direccionController.text.trim(),
           'nombre_comunidad': _nombreComunidadController.text.trim(),
           'email': _emailController.text.trim(),
           'uid': userCredential.user!.uid,
@@ -106,7 +88,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // 🎨 Estilo de los campos
   InputDecoration _buildDecoration(String label) {
     return InputDecoration(
       labelText: label,

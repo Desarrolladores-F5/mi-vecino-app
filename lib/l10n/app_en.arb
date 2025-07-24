@@ -90,5 +90,11 @@
   "guardarCambios": "Save changes",
   "alarmaVecinal": "Neighborhood Alarm",
   "alarmaVecinal": "Neighborhood Alarm",
-  "activarAlarmaVecinal": "ACTIVATE NEIGHBORHOOD ALARM"
+  "activarAlarmaVecinal": "ACTIVATE NEIGHBORHOOD ALARM",
+  "telefonosEmergencia": "Emergency Phones",
+  "carabineros": "Chilean Police",
+  "bomberos": "Firefighters",
+  "samu": "SAMU - Medical Emergency",
+  "llamar": "Call"
+
 }

@@ -90,5 +90,11 @@
   "guardarCambios": "Guardar cambios",
   "alarmaVecinal": "Alarma Vecinal",
   "alarmaVecinal": "Alarma Vecinal",
-  "activarAlarmaVecinal": "ACTIVAR ALARMA VECINAL"
+  "activarAlarmaVecinal": "ACTIVAR ALARMA VECINAL",
+  "telefonosEmergencia": "Teléfonos de Emergencia",
+  "carabineros": "Carabineros de Chile",
+  "bomberos": "Bomberos",
+  "samu": "SAMU",
+  "llamar": "Llamar"
+
 }

@@ -268,4 +268,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activarAlarmaVecinal => 'ACTIVATE NEIGHBORHOOD ALARM';
+
+  @override
+  String get telefonosEmergencia => 'Emergency Phones';
+
+  @override
+  String get carabineros => 'Chilean Police';
+
+  @override
+  String get bomberos => 'Firefighters';
+
+  @override
+  String get samu => 'SAMU - Medical Emergency';
+
+  @override
+  String get llamar => 'Call';
 }

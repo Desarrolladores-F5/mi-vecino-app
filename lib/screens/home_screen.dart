@@ -178,6 +178,11 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AlarmaScreen())),
             ),
             ListTile(
+              leading: const Icon(Icons.local_phone),
+              title: Text(AppLocalizations.of(context).telefonosEmergencia),
+              onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/telefonos_emergencia');},
+            ),
+            ListTile(
               leading: const Icon(Icons.wifi),
               title: Text(localizations.estadoApp),
               subtitle: Text(localizations.estadoConectado),

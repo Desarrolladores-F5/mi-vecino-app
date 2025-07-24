@@ -270,4 +270,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activarAlarmaVecinal => 'ACTIVAR ALARMA VECINAL';
+
+  @override
+  String get telefonosEmergencia => 'Teléfonos de Emergencia';
+
+  @override
+  String get carabineros => 'Carabineros de Chile';
+
+  @override
+  String get bomberos => 'Bomberos';
+
+  @override
+  String get samu => 'SAMU';
+
+  @override
+  String get llamar => 'Llamar';
 }

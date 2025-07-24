@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart'; // 🌐 Traducciones generadas
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -14,6 +13,7 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/check_auth_screen.dart';
 import 'screens/idioma_screen.dart'; // 🌍 Pantalla para cambiar idioma
+import 'screens/telefonos_emergencia_screen.dart'; // Agrega el import
 
 // 🔑 Clave global para acceder al estado de la app y cambiar idioma
 final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
@@ -111,6 +111,7 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => HomeScreen(),
         '/idioma': (context) => const IdiomaScreen(),
+        '/telefonos_emergencia': (context) => const TelefonosEmergenciaScreen(),
       },
     );
   }

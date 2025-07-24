@@ -39,91 +39,94 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
   }
 
   Future<void> _publicar() async {
-    final mensaje = _mensajeController.text.trim();
-    final user = FirebaseAuth.instance.currentUser;
-    final localizations = AppLocalizations.of(context);
+  final mensaje = _mensajeController.text.trim();
+  final user = FirebaseAuth.instance.currentUser;
+  final localizations = AppLocalizations.of(context);
 
-    if (mensaje.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.mensajeVacio)),
-      );
-      return;
+  if (mensaje.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(localizations.mensajeVacio)),
+    );
+    return;
+  }
+
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(localizations.usuarioNoAutenticado)),
+    );
+    return;
+  }
+
+  setState(() {
+    _cargando = true;
+  });
+
+  String? urlArchivo;
+  String? fotoPerfil;
+  String autor = user.email ?? 'Desconocido'; // Por defecto
+  String nombreComunidad = ''; // Nuevo campo
+
+  try {
+    // 📥 Subir archivo a Firebase Storage si fue seleccionado
+    if (_archivoSeleccionado != null) {
+      final nombreArchivo = _archivoSeleccionado!.name;
+      final referenciaStorage = FirebaseStorage.instance
+          .ref()
+          .child('publicaciones')
+          .child('${DateTime.now().millisecondsSinceEpoch}_$nombreArchivo');
+
+      final bytes = await _archivoSeleccionado!.readAsBytes();
+      final metadata = SettableMetadata(contentType: _getMimeType(nombreArchivo));
+
+      await referenciaStorage.putData(bytes, metadata);
+      urlArchivo = await referenciaStorage.getDownloadURL();
     }
 
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.usuarioNoAutenticado)),
-      );
-      return;
+    // 🔍 Obtener nombre real, foto de perfil y nombre de comunidad desde Firestore
+    final snapshot = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(user.uid)
+        .get();
+
+    if (snapshot.exists) {
+      final data = snapshot.data();
+      autor = data?['nombre'] ?? autor;
+      fotoPerfil = data?['fotoPerfil'];
+      nombreComunidad = data?['nombre_comunidad']?.toString().trim() ?? '';
     }
 
-    setState(() {
-      _cargando = true;
+    // 🕒 Fecha y hora formateada para mostrarla
+    final DateTime ahora = DateTime.now();
+    final String fechaFormateada = DateFormat('dd-MM-yyyy – HH:mm').format(ahora);
+
+    // 🔥 Subir la publicación
+    await FirebaseFirestore.instance.collection('publicaciones').add({
+      'mensaje': mensaje,
+      'fecha': ahora,
+      'fechaFormateada': fechaFormateada,
+      'archivoUrl': urlArchivo ?? '',
+      'archivoNombre': _archivoSeleccionado?.name ?? '',
+      'autor': autor,
+      'uid': user.uid,
+      'fotoPerfil': fotoPerfil ?? '',
+      'nombre_comunidad': nombreComunidad, // ✅ Campo agregado correctamente
     });
 
-    String? urlArchivo;
-    String? fotoPerfil;
-    String autor = user.email ?? 'Desconocido'; // Por defecto
-
-    try {
-      // 📥 Subir archivo a Firebase Storage si fue seleccionado
-      if (_archivoSeleccionado != null) {
-        final nombreArchivo = _archivoSeleccionado!.name;
-        final referenciaStorage = FirebaseStorage.instance
-            .ref()
-            .child('publicaciones')
-            .child('${DateTime.now().millisecondsSinceEpoch}_$nombreArchivo');
-
-        final bytes = await _archivoSeleccionado!.readAsBytes();
-        final metadata = SettableMetadata(contentType: _getMimeType(nombreArchivo));
-
-        await referenciaStorage.putData(bytes, metadata);
-        urlArchivo = await referenciaStorage.getDownloadURL();
-      }
-
-      // 🔍 Obtener nombre real y foto de perfil desde Firestore
-      final snapshot = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(user.uid)
-          .get();
-
-      if (snapshot.exists) {
-        final data = snapshot.data();
-        autor = data?['nombre'] ?? autor;
-        fotoPerfil = data?['fotoPerfil'];
-      }
-
-      // 🕒 Fecha y hora formateada para mostrarla
-      final DateTime ahora = DateTime.now();
-      final String fechaFormateada = DateFormat('dd-MM-yyyy – HH:mm').format(ahora);
-
-      // 🔥 Subir la publicación
-      await FirebaseFirestore.instance.collection('publicaciones').add({
-        'mensaje': mensaje,
-        'fecha': ahora,
-        'fechaFormateada': fechaFormateada,
-        'archivoUrl': urlArchivo ?? '',
-        'archivoNombre': _archivoSeleccionado?.name ?? '',
-        'autor': autor,
-        'uid': user.uid,
-        'fotoPerfil': fotoPerfil ?? '',
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.publicacionExitosa)),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      print('❌ Error al publicar: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizations.errorPublicar)),
-      );
-    } finally {
-      setState(() {
-        _cargando = false;
-      });
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(localizations.publicacionExitosa)),
+    );
+    Navigator.pop(context);
+  } catch (e) {
+    print('❌ Error al publicar: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(localizations.errorPublicar)),
+    );
+  } finally {
+    setState(() {
+      _cargando = false;
+    });
   }
+}
 
   String _getMimeType(String filename) {
     final ext = filename.toLowerCase();
