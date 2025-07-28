@@ -21,6 +21,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  // Variables para controlar visibilidad de contraseñas
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
   // 📝 Registro de usuario (sin límite por dirección)
   Future<void> _registerUser() async {
     if (_formKey.currentState!.validate()) {
@@ -153,24 +157,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       : null,
                 ),
                 const SizedBox(height: 12),
+
+                // Campo de contraseña con ojito
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
-                  decoration: _buildDecoration(localizations.contrasena),
+                  obscureText: _obscurePassword,
+                  decoration: _buildDecoration(localizations.contrasena).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
                   validator: (v) => v == null || v.length < 6
                       ? localizations.contrasenaCorta
                       : null,
                 ),
                 const SizedBox(height: 12),
+
+                // Confirmar contraseña con ojito
                 TextFormField(
                   controller: _confirmPasswordController,
-                  obscureText: true,
-                  decoration: _buildDecoration(localizations.confirmarContrasena),
+                  obscureText: _obscureConfirmPassword,
+                  decoration: _buildDecoration(localizations.confirmarContrasena).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                  ),
                   validator: (v) => v != _passwordController.text
                       ? localizations.contrasenasNoCoinciden
                       : null,
                 ),
                 const SizedBox(height: 24),
+
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3EC6A8),

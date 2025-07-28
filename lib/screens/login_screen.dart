@@ -34,7 +34,6 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // 1. Autenticación con Firebase
         final credenciales = await FirebaseAuth.instance
             .signInWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -42,8 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         final uid = credenciales.user!.uid;
-
-        // 2. Obtenemos el documento del usuario
         final snapshot = await FirebaseFirestore.instance
             .collection('usuarios')
             .doc(uid)
@@ -53,18 +50,14 @@ class _LoginScreenState extends State<LoginScreen> {
           final datos = snapshot.data()!;
           final nombreComunidad = datos['nombre_comunidad'];
 
-          // 🔁 Transformamos el nombre de comunidad para usarlo como topic válido
           final topicSeguro = nombreComunidad
-              .toLowerCase()       // Convertir todo a minúsculas
-              .replaceAll(' ', '_') // Reemplazar espacios por guiones bajos
-              .trim();              // Eliminar espacios iniciales/finales
+              .toLowerCase()
+              .replaceAll(' ', '_')
+              .trim();
 
-          // 3. Suscripción al topic de FCM según comunidad
-          await FirebaseMessaging.instance
-              .subscribeToTopic(topicSeguro);
+          await FirebaseMessaging.instance.subscribeToTopic(topicSeguro);
         }
 
-        // 4. Redirección a la pantalla principal
         Navigator.pushReplacementNamed(context, '/home');
       } on FirebaseAuthException catch (e) {
         String mensaje = AppLocalizations.of(context).errorGenerico;
@@ -97,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
             key: _formKey,
             child: Column(
               children: [
-                Image.asset('assets/logo.png', height: 210), // 🖼️ Logo
+                Image.asset('assets/logo.png', height: 210),
                 const SizedBox(height: 16),
 
                 Text(
@@ -110,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // 📧 Email
+                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -127,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 🔑 Contraseña
+                // Contraseña
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -156,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // 🔘 Botón iniciar sesión
+                // Botón iniciar sesión
                 _isLoading
                     ? const CircularProgressIndicator()
                     : SizedBox(
@@ -175,12 +168,39 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                 const SizedBox(height: 16),
 
-                // 📎 Enlace registro
+                // Enlace registro
                 TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/register');
                   },
                   child: Text(localizations.noCuentaRegistrate),
+                ),
+
+                // Nueva opción: ¿Olvidaste tu contraseña?
+                TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text(
+                              'Función de recuperar contraseña próximamente')),
+                    );
+                  },
+                  child: const Text(
+                    '¿Olvidaste tu contraseña?',
+                    style: TextStyle(color: Colors.deepPurple),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Créditos
+                const Text(
+                  'Desarrollado por F-5 Soluciones Tecnológicas © 2025, version 2.0',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
