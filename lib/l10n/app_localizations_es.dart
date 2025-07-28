@@ -285,4 +285,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get llamar => 'Llamar';
+
+  @override
+  String get camarasComunitarias => 'Cámaras Comunitarias';
+
+  @override
+  String get verCamaras => 'Ver cámaras de la comunidad';
 }

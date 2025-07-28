@@ -183,6 +183,11 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/telefonos_emergencia');},
             ),
             ListTile(
+              leading: const Icon(Icons.videocam),
+              title: Text(AppLocalizations.of(context).camarasComunitarias),
+              onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/camaras');},
+            ),
+            ListTile(
               leading: const Icon(Icons.wifi),
               title: Text(localizations.estadoApp),
               subtitle: Text(localizations.estadoConectado),

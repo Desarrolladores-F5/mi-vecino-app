@@ -95,6 +95,7 @@
   "carabineros": "Carabineros de Chile",
   "bomberos": "Bomberos",
   "samu": "SAMU",
-  "llamar": "Llamar"
-
+  "llamar": "Llamar",
+  "camarasComunitarias": "Cámaras Comunitarias",
+  "verCamaras": "Ver cámaras de la comunidad"
 }

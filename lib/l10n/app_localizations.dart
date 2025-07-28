@@ -643,6 +643,18 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Llamar'**
   String get llamar;
+
+  /// No description provided for @camarasComunitarias.
+  ///
+  /// In es, this message translates to:
+  /// **'Cámaras Comunitarias'**
+  String get camarasComunitarias;
+
+  /// No description provided for @verCamaras.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver cámaras de la comunidad'**
+  String get verCamaras;
 }
 
 class _AppLocalizationsDelegate

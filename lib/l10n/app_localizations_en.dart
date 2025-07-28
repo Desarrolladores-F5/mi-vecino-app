@@ -283,4 +283,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get llamar => 'Call';
+
+  @override
+  String get camarasComunitarias => 'Community Cameras';
+
+  @override
+  String get verCamaras => 'View community cameras';
 }

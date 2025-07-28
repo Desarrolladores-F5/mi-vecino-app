@@ -95,6 +95,7 @@
   "carabineros": "Chilean Police",
   "bomberos": "Firefighters",
   "samu": "SAMU - Medical Emergency",
-  "llamar": "Call"
-
+  "llamar": "Call",
+  "camarasComunitarias": "Community Cameras",
+  "verCamaras": "View community cameras"
 }
