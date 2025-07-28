@@ -179,10 +179,62 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Nueva opción: ¿Olvidaste tu contraseña?
                 TextButton(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text(
-                              'Función de recuperar contraseña próximamente')),
+                    final TextEditingController emailResetController = TextEditingController();
+
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('Recuperar contraseña'),
+                          content: TextField(
+                            controller: emailResetController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Correo registrado',
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final email = emailResetController.text.trim();
+                                if (email.isNotEmpty && email.contains('@')) {
+                                  try {
+                                    await FirebaseAuth.instance
+                                        .sendPasswordResetEmail(email: email);
+
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Se ha enviado un correo para restablecer tu contraseña.',
+                                        ),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Error al enviar el correo de recuperación: $e'),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Por favor, ingresa un correo válido')),
+                                  );
+                                }
+                              },
+                              child: const Text('Enviar'),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                   child: const Text(
@@ -190,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: Colors.deepPurple),
                   ),
                 ),
-
+                
                 const SizedBox(height: 20),
 
                 // Créditos
