@@ -15,6 +15,8 @@ import 'screens/check_auth_screen.dart';
 import 'screens/idioma_screen.dart'; // 🌍 Pantalla para cambiar idioma
 import 'screens/telefonos_emergencia_screen.dart'; // Agrega el import
 import 'screens/camaras_screen.dart'; // 👈 IMPORTANTE para ver las camaras (con linea 117)
+import 'screens/panic_button_screen.dart'; // 👈 IMPORTANTE para el boton de panico
+
 
 
 // 🔑 Clave global para acceder al estado de la app y cambiar idioma
@@ -115,6 +117,8 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
         '/idioma': (context) => const IdiomaScreen(),
         '/telefonos_emergencia': (context) => const TelefonosEmergenciaScreen(),
         '/camaras': (context) => const CamarasScreen(),
+        '/panic': (context) => const PanicButtonScreen(),
+
       },
     );
   }

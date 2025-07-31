@@ -163,16 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const IdiomaScreen())),
             ),
             ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text(localizations.acercaDe),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen())),
-            ),
-            ListTile(
-              leading: const Icon(Icons.feedback_outlined),
-              title: Text(localizations.sugerencias),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen())),
-            ),
-            ListTile(
               leading: const Icon(Icons.campaign),
               title: Text(localizations.alarmaVecinal),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AlarmaScreen())),
@@ -188,12 +178,28 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/camaras');},
             ),
             ListTile(
+              leading: const Icon(Icons.warning),
+              title: const Text('Botón de Pánico'),
+              onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/panic');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.feedback_outlined),
+              title: Text(localizations.sugerencias),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SugerenciasScreen())),
+            ),
+            ListTile(
               leading: const Icon(Icons.wifi),
               title: Text(localizations.estadoApp),
               subtitle: Text(localizations.estadoConectado),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EstadoAppScreen())),
             ),
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(localizations.acercaDe),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AcercaAppScreen())),
+            ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: Text(localizations.cerrarSesion),

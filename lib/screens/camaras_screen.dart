@@ -22,7 +22,7 @@ class CamarasScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
+    final localizations = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +41,7 @@ class CamarasScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) {
-                    final local = AppLocalizations.of(context)!;
+                    final local = AppLocalizations.of(context);
                     return Scaffold(
                       appBar: AppBar(
                         title: Text(
