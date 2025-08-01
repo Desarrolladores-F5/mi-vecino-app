@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'utils/firebase_messaging_helper.dart'; // ✅ Ayuda a manejar notificaciones FCM
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ Notificaciones locales
+import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 NUEVO: FCM directo
 
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
@@ -13,11 +14,9 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/check_auth_screen.dart';
 import 'screens/idioma_screen.dart'; // 🌍 Pantalla para cambiar idioma
-import 'screens/telefonos_emergencia_screen.dart'; // Agrega el import
-import 'screens/camaras_screen.dart'; // 👈 IMPORTANTE para ver las camaras (con linea 117)
-import 'screens/panic_button_screen.dart'; // 👈 IMPORTANTE para el boton de panico
-
-
+import 'screens/telefonos_emergencia_screen.dart'; 
+import 'screens/camaras_screen.dart'; 
+import 'screens/panic_button_screen.dart'; 
 
 // 🔑 Clave global para acceder al estado de la app y cambiar idioma
 final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
@@ -25,6 +24,12 @@ final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
 // ✅ Canal de notificaciones (necesario para Android)
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
+// 🔔 NUEVO: Handler para mensajes en segundo plano/cerrada
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Mensaje recibido en background: ${message.messageId}");
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 🧱 Asegura que Flutter esté listo
@@ -34,14 +39,17 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 🛡️ Activa App Check (modo debug por ahora, al publicar cambiar por androidProvider: AndroidProvider.playIntegrity,)
+  // 🛡️ Activa App Check (modo debug por ahora)
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );
 
+  // 🔔 NUEVO: Configura handler de background
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   // 📩 Inicializa notificaciones locales
   const AndroidInitializationSettings androidSettings =
-      AndroidInitializationSettings('@mipmap/ic_launcher'); // 🔔 Ícono de la notificación
+      AndroidInitializationSettings('@mipmap/ic_launcher');
 
   const InitializationSettings initSettings = InitializationSettings(
     android: androidSettings,
@@ -49,8 +57,34 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 
-  // 🚀 Inicializa Firebase Messaging y escucha mensajes
+  // 🚀 Inicializa Firebase Messaging y escucha mensajes (helper existente)
   await setupFCM(flutterLocalNotificationsPlugin);
+
+  // 🔔 NUEVO: Solicita permiso para notificaciones (Android 13+)
+  await FirebaseMessaging.instance.requestPermission();
+
+  // 🔔 NUEVO: Listener para mostrar notificaciones cuando app está abierta
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = notification?.android;
+    if (notification != null && android != null) {
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'mi_vecino_channel',
+            'Notificaciones de Mi Vecino',
+            channelDescription: 'Canal para notificaciones importantes',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+        ),
+      );
+    }
+  });
 
   // 🚀 Lanza la aplicación con clave global
   runApp(MiVecinoApp(key: appKey));
@@ -86,7 +120,7 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
 
-      locale: _locale, // 🌐 Idioma actual
+      locale: _locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -118,7 +152,6 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
         '/telefonos_emergencia': (context) => const TelefonosEmergenciaScreen(),
         '/camaras': (context) => const CamarasScreen(),
         '/panic': (context) => const PanicButtonScreen(),
-
       },
     );
   }

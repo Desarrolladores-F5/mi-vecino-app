@@ -56,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               .trim();
 
           await FirebaseMessaging.instance.subscribeToTopic(topicSeguro);
+          print('Suscrito correctamente al topic: $topicSeguro');
         }
 
         Navigator.pushReplacementNamed(context, '/home');
