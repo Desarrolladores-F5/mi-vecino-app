@@ -59,6 +59,7 @@ class _PanicButtonScreenState extends State<PanicButtonScreen> {
       final userData = userDoc.data();
       final nombre = userData?['nombre'] ?? 'Vecino';
       final comunidad = userData?['nombre_comunidad'] ?? 'general';
+      final direccion = userData?['direccion'] ?? 'Dirección no disponible';
 
       // 3. Obtener ubicación actual
       final position = await Geolocator.getCurrentPosition(
@@ -71,6 +72,7 @@ class _PanicButtonScreenState extends State<PanicButtonScreen> {
         'userId': user.uid,
         'nombre': nombre,
         'comunidad': comunidad,
+        'direccion': direccion,            // ← NUEVO
         'latitud': position.latitude,
         'longitud': position.longitude,
         'fecha': Timestamp.now(),

@@ -7,6 +7,8 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'utils/firebase_messaging_helper.dart'; // ✅ Ayuda a manejar notificaciones FCM
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ Notificaciones locales
 import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 NUEVO: FCM directo
+import 'dart:io'; // 🔔 NUEVO: detectar plataforma
+import 'package:permission_handler/permission_handler.dart'; // 🔔 NUEVO: pedir permiso Android 13+
 
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
@@ -14,9 +16,9 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/check_auth_screen.dart';
 import 'screens/idioma_screen.dart'; // 🌍 Pantalla para cambiar idioma
-import 'screens/telefonos_emergencia_screen.dart'; 
-import 'screens/camaras_screen.dart'; 
-import 'screens/panic_button_screen.dart'; 
+import 'screens/telefonos_emergencia_screen.dart';
+import 'screens/camaras_screen.dart';
+import 'screens/panic_button_screen.dart';
 
 // 🔑 Clave global para acceder al estado de la app y cambiar idioma
 final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
@@ -29,6 +31,40 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Mensaje recibido en background: ${message.messageId}");
+}
+
+/// 🔔 NUEVO: Crea (o asegura) un canal de notificaciones de alta prioridad en Android 8+.
+///  Esto ayuda a que suenen/vibren las alertas importantes.
+Future<void> _ensureAndroidNotificationChannel() async {
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'mi_vecino_channel', // Debe coincidir con el channelId que uses al mostrar
+    'Notificaciones de Mi Vecino',
+    description: 'Canal para notificaciones importantes',
+    importance: Importance.max,
+    playSound: true,
+  );
+
+  final androidPlugin = flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  if (androidPlugin != null) {
+    await androidPlugin.createNotificationChannel(channel);
+  }
+}
+
+/// 🔔 NUEVO: Pide el permiso de notificaciones en Android 13+
+/// (En iOS el permiso lo maneja `FirebaseMessaging.instance.requestPermission()`.)
+Future<void> _ensureNotificationPermission() async {
+  if (Platform.isAndroid) {
+    // En Android 13+ es necesario pedir permiso. En versiones previas, se ignora.
+    final status = await Permission.notification.request();
+    if (status.isPermanentlyDenied) {
+      // Opcional: guía al usuario a Ajustes si lo denegó para siempre.
+      // await openAppSettings();
+      print('Permiso de notificaciones denegado permanentemente.');
+    }
+  }
 }
 
 Future<void> main() async {
@@ -57,11 +93,17 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 
+  // 🔔 NUEVO: Crea/asegura el canal de alta prioridad en Android 8+
+  await _ensureAndroidNotificationChannel();
+
+  // 🔔 NUEVO: Solicita permiso para notificaciones
+  // iOS/Web: usa la API de FCM
+  await FirebaseMessaging.instance.requestPermission();
+  // Android 13+: usa permission_handler
+  await _ensureNotificationPermission();
+
   // 🚀 Inicializa Firebase Messaging y escucha mensajes (helper existente)
   await setupFCM(flutterLocalNotificationsPlugin);
-
-  // 🔔 NUEVO: Solicita permiso para notificaciones (Android 13+)
-  await FirebaseMessaging.instance.requestPermission();
 
   // 🔔 NUEVO: Listener para mostrar notificaciones cuando app está abierta
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -74,12 +116,14 @@ Future<void> main() async {
         notification.body,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'mi_vecino_channel',
+            'mi_vecino_channel', // 👈 Debe coincidir con el canal creado
             'Notificaciones de Mi Vecino',
             channelDescription: 'Canal para notificaciones importantes',
             importance: Importance.max,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
+            playSound: true,
+            enableVibration: true,
           ),
         ),
       );

@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>  <!-- evita que la app entre en suspension --> 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/> <!-- Permiso para acceder a la ubicación precisa del dispositivo utilizando el GPS -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>  <!-- Permite a una aplicación obtener una ubicación aproximada del dispositivo, generalmente utilizando datos de torres celulares y redes Wi-F -->
-
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />  <!-- para solicitar permiso de notificaciones cuando la app está cerrada --> 
     
     <application
         android:label="mi_vecino"
