@@ -6,9 +6,10 @@ import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'utils/firebase_messaging_helper.dart'; // ✅ Ayuda a manejar notificaciones FCM
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ✅ Notificaciones locales
-import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 NUEVO: FCM directo
-import 'dart:io'; // 🔔 NUEVO: detectar plataforma
-import 'package:permission_handler/permission_handler.dart'; // 🔔 NUEVO: pedir permiso Android 13+
+import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 FCM directo
+import 'dart:io'; // 🔔 Detectar plataforma
+import 'package:permission_handler/permission_handler.dart'; // 🔔 Pedir permiso Android 13+
+import 'package:url_launcher/url_launcher.dart'; // ✅ Abrir URLs externas (Maps/Navegador)
 
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
@@ -23,21 +24,22 @@ import 'screens/panic_button_screen.dart';
 // 🔑 Clave global para acceder al estado de la app y cambiar idioma
 final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
 
-// ✅ Canal de notificaciones (necesario para Android)
+// ✅ Plugin de notificaciones locales (Android/iOS)
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-// 🔔 NUEVO: Handler para mensajes en segundo plano/cerrada
+// 🔔 Handler para mensajes recibidos en segundo plano / app cerrada
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Mensaje recibido en background: ${message.messageId}");
 }
 
-/// 🔔 NUEVO: Crea (o asegura) un canal de notificaciones de alta prioridad en Android 8+.
-///  Esto ayuda a que suenen/vibren las alertas importantes.
+/// 🔔 Crea/asegura un canal de notificaciones de alta prioridad en Android 8+
+///    (ayuda a que suenen/vibren las alertas importantes).
 Future<void> _ensureAndroidNotificationChannel() async {
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'mi_vecino_channel', // Debe coincidir con el channelId que uses al mostrar
+    'mi_vecino_channel', // Debe coincidir con el channelId usado al mostrar
     'Notificaciones de Mi Vecino',
     description: 'Canal para notificaciones importantes',
     importance: Importance.max,
@@ -52,21 +54,47 @@ Future<void> _ensureAndroidNotificationChannel() async {
     await androidPlugin.createNotificationChannel(channel);
   }
 }
-
-/// 🔔 NUEVO: Pide el permiso de notificaciones en Android 13+
+/// 🔔 Pide el permiso de notificaciones en Android 13+
 /// (En iOS el permiso lo maneja `FirebaseMessaging.instance.requestPermission()`.)
 Future<void> _ensureNotificationPermission() async {
   if (Platform.isAndroid) {
-    // En Android 13+ es necesario pedir permiso. En versiones previas, se ignora.
     final status = await Permission.notification.request();
     if (status.isPermanentlyDenied) {
-      // Opcional: guía al usuario a Ajustes si lo denegó para siempre.
+      // Opcional: abrir ajustes si el usuario lo denegó para siempre.
       // await openAppSettings();
       print('Permiso de notificaciones denegado permanentemente.');
     }
   }
 }
+/// 🗺️ Intenta abrir el mapa si viene `mapUrl` en los datos de la notificación.
+///    Usa modo externo para forzar Google Maps o el navegador.
+Future<void> openMapIfPresent(RemoteMessage message) async {
+  try {
+    final data = message.data;
+    final String? mapUrl = data['mapUrl'] as String?;
+    if (mapUrl == null || mapUrl.trim().isEmpty) {
+      print('ℹ️ No vino mapUrl en los datos: $data');
+      return;
+    }
+    print('✅ mapUrl recibido: $mapUrl');
 
+    final uri = Uri.parse(mapUrl);
+    if (await canLaunchUrl(uri)) {
+      final ok = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication, // 👈 clave para Android
+      );
+      if (!ok) {
+        print('⚠️ launchUrl retornó false para $mapUrl');
+      }
+    } else {
+      print('❌ No se pudo abrir el mapa (canLaunchUrl == false)');
+    }
+  } catch (e, st) {
+    print('❌ Error abriendo mapUrl: $e');
+    print(st);
+  }
+}
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // 🧱 Asegura que Flutter esté listo
 
@@ -80,10 +108,10 @@ Future<void> main() async {
     androidProvider: AndroidProvider.debug,
   );
 
-  // 🔔 NUEVO: Configura handler de background
+  // 🔔 Registra el handler de background antes de cualquier listener
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // 📩 Inicializa notificaciones locales
+  // 📩 Inicializa notificaciones locales (icono por defecto del app)
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -93,19 +121,17 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 
-  // 🔔 NUEVO: Crea/asegura el canal de alta prioridad en Android 8+
+  // 🔔 Crea/asegura el canal de alta prioridad en Android 8+
   await _ensureAndroidNotificationChannel();
 
-  // 🔔 NUEVO: Solicita permiso para notificaciones
-  // iOS/Web: usa la API de FCM
-  await FirebaseMessaging.instance.requestPermission();
-  // Android 13+: usa permission_handler
-  await _ensureNotificationPermission();
+  // 🔔 Solicita permisos para notificaciones
+  await FirebaseMessaging.instance.requestPermission(); // iOS / Android 13+
+  await _ensureNotificationPermission(); // Android 13+
 
-  // 🚀 Inicializa Firebase Messaging y escucha mensajes (helper existente)
+  // 🚀 Inicializa FCM (listeners para taps, background, etc.)
   await setupFCM(flutterLocalNotificationsPlugin);
 
-  // 🔔 NUEVO: Listener para mostrar notificaciones cuando app está abierta
+  // 🔔 Muestra banner local cuando la app está en primer plano
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = notification?.android;
@@ -129,6 +155,20 @@ Future<void> main() async {
       );
     }
   });
+
+    // 👇 Si la app estaba terminada y fue abierta tocando la noti
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    print('onGetInitialMessage -> data: ${initialMessage.data}');
+    await openMapIfPresent(initialMessage);
+  }
+
+  // 👇 Si la app estaba en background y el usuario tocó la noti
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
+    print('onMessageOpenedApp -> data: ${message.data}');
+    await openMapIfPresent(message);
+  });
+
 
   // 🚀 Lanza la aplicación con clave global
   runApp(MiVecinoApp(key: appKey));
@@ -193,7 +233,8 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => HomeScreen(),
         '/idioma': (context) => const IdiomaScreen(),
-        '/telefonos_emergencia': (context) => const TelefonosEmergenciaScreen(),
+        '/telefonos_emergencia': (context) =>
+            const TelefonosEmergenciaScreen(),
         '/camaras': (context) => const CamarasScreen(),
         '/panic': (context) => const PanicButtonScreen(),
       },

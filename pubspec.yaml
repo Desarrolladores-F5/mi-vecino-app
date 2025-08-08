@@ -53,10 +53,10 @@ dependencies:
   audioplayers: ^5.2.1
   firebase_messaging: ^15.2.9  # O la versión más reciente, para hacer funcionar la alarma
   flutter_local_notifications: ^19.2.1   # para hacer funcionar la alarma
-  url_launcher: ^6.2.5    # para hacer llamadas de emergencia a carabineros o bomberos, etc.
+  url_launcher: ^6.3.1   # para hacer llamadas de emergencia a carabineros o bomberos, etc.
   webview_flutter: ^4.13.0
   geolocator: ^14.0.1 # para hacer funcionar el boton de pánico y me muestre quien lo hace.
-  permission_handler: ^12.0.0+1  # solicita y gestiona permisos de tiempo de ejecución en tu aplicación (para boton de panico).
+  permission_handler: ^12.0.0+1  # solicita y gestiona permisos de tiempo de ejecución en tu aplicación (para boton de panico).  
 
 dev_dependencies:
   flutter_test:
