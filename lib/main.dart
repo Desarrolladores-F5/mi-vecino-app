@@ -10,6 +10,7 @@ import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 FCM directo
 import 'dart:io'; // 🔔 Detectar plataforma
 import 'package:permission_handler/permission_handler.dart'; // 🔔 Pedir permiso Android 13+
 import 'package:url_launcher/url_launcher.dart'; // ✅ Abrir URLs externas (Maps/Navegador)
+import 'package:mi_vecino/core/topic_subscription.dart';
 
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
@@ -169,6 +170,7 @@ Future<void> main() async {
     await openMapIfPresent(message);
   });
 
+  await TopicSubscription.subscribeFromLocalPrefs();
 
   // 🚀 Lanza la aplicación con clave global
   runApp(MiVecinoApp(key: appKey));

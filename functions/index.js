@@ -5,12 +5,31 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 setGlobalOptions({ region: "us-central1" });
 
-// 🔔 Se ejecuta al crear un documento en panic_alerts
+/**
+ * Normaliza igual que en Flutter helper:
+ * - a minúsculas
+ * - espacios -> "_"
+ * - elimina caracteres no permitidos
+ * - prefijo "comunidad_"
+ */
+function toTopic(communityName) {
+  const s = String(communityName || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(" ", "_")
+    .replace(/[^a-z0-9_\-\.~%]/g, "");
+  return `comunidad_${s}`;
+}
+
+/**
+ * 🔔 Se ejecuta al crear un documento en panic_alerts
+ * Espera campos: comunidad, nombre, direccion, latitud, longitud, userId (opcional)
+ */
 exports.notificarPanicAlert = onDocumentCreated("panic_alerts/{alertId}", async (event) => {
   const snap = event.data;
   if (!snap) return;
 
-  const d = snap.data();
+  const d = snap.data() || {};
   const comunidadRaw = d.comunidad || "";
   const nombre       = d.nombre || "Un vecino";
   const direccion    = d.direccion || "una dirección no especificada";
@@ -18,32 +37,43 @@ exports.notificarPanicAlert = onDocumentCreated("panic_alerts/{alertId}", async 
   const lng          = d.longitud;
   const emisorId     = d.userId || "";
 
-  // ✅ Normaliza el nombre de la comunidad para usarlo como topic
-  const comunidadTopic = comunidadRaw.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  const topic = toTopic(comunidadRaw);
+
+  // Si no viene mapUrl, lo construimos desde lat/long si existen
+  let mapUrl = d.mapUrl;
+  if (!mapUrl && lat != null && lng != null) {
+    mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+  }
+
+  const data = {
+    tipo: "panic",
+    comunidad: comunidadRaw,     // texto “humano” para logs
+    emisorId: String(emisorId),
+  };
+  if (lat != null)  data.latitud  = String(lat);
+  if (lng != null)  data.longitud = String(lng);
+  if (mapUrl)       data.mapUrl   = String(mapUrl);
+
+  const message = {
+    topic,
+    notification: {
+      title: "🚨 Alerta de Pánico",
+      body: `${nombre} ha activado el botón de pánico en ${direccion}.`,
+    },
+    data, // <- importante para cold start + abrir Maps
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "mi_vecino_channel",
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        sound: "default",
+      },
+    },
+  };
 
   try {
-    await admin.messaging().send({
-      topic: comunidadTopic,
-      notification: {
-        title: "🚨 Alerta de Pánico",
-        body: `${nombre} ha activado el botón de pánico en ${direccion}.`,
-      },
-      data: {
-        tipo: "panic",
-        comunidad: comunidadRaw,
-        emisorId,
-        latitud: String(lat ?? ""),
-        longitud: String(lng ?? ""),
-        // 👇 clave para abrir Google Maps en el receptor
-        mapUrl: (lat != null && lng != null) ? `https://www.google.com/maps?q=${lat},${lng}` : "",
-      },
-      android: {
-        priority: "high",
-        notification: { sound: "default" },
-      },
-    });
-
-    console.log(`Notificación enviada al topic: ${comunidadTopic}`);
+    const id = await admin.messaging().send(message);
+    console.log("FCM message ID:", id, "topic:", topic, "data:", data);
   } catch (err) {
     console.error("Error enviando notificación:", err);
   }

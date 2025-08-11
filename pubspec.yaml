@@ -57,6 +57,7 @@ dependencies:
   webview_flutter: ^4.13.0
   geolocator: ^14.0.1 # para hacer funcionar el boton de pánico y me muestre quien lo hace.
   permission_handler: ^12.0.0+1  # solicita y gestiona permisos de tiempo de ejecución en tu aplicación (para boton de panico).  
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

@@ -61,4 +61,19 @@ Alarmas comunitarias en tiempo real.
 
 Teléfonos de emergencia accesibles desde el menú lateral.
 
+## 🚨 Alarma Vecinal — Implementación Cold Start + Google Maps
 
+**Objetivo:**  
+Permitir que los usuarios reciban y abran notificaciones de alarma, con la app cerrada o el usuario deslogueado, y que al tocar la notificación se abra **Google Maps** mostrando la ubicación exacta del emisor.
+
+---
+
+### 1️⃣ Suscripción Persistente por Comunidad
+- Archivo: `lib/core/topic_subscription.dart`
+- Guarda la comunidad en `SharedPreferences`.
+- Suscribe automáticamente al topic al iniciar la app.
+- Actualiza la suscripción al cambiar de comunidad.
+
+**Uso en main.dart:**
+```dart
+await TopicSubscription.subscribeFromLocalPrefs();

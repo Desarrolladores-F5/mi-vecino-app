@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart'; // 🧱 UI principal de Flutter
 import 'package:firebase_auth/firebase_auth.dart'; // 🔐 Autenticación
 import 'package:cloud_firestore/cloud_firestore.dart'; // 📄 Firestore
-import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 Notificaciones push
+// import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 Notificaciones push
 import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Traducciones
+import 'package:mi_vecino/core/topic_subscription.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,15 +49,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (snapshot.exists) {
           final datos = snapshot.data()!;
-          final nombreComunidad = datos['nombre_comunidad'];
+          // Usamos el nombre de comunidad real; fallback por si en algún documento quedó con otra key
+          final String comunidadFirestore = (datos['nombre_comunidad'] ?? datos['comunidad'] ?? '').toString().trim();
+          // (opcional) fallback si deseas priorizar lo escrito en el form:
+          // final String comunidadFormulario = (nombreComunidad ?? '').toString().trim();
 
-          final topicSeguro = nombreComunidad
-              .toLowerCase()
-              .replaceAll(' ', '_')
-              .trim();
+          // 2) Usamos lo que viene de Firestore (sin fallback a variables inexistentes)
+          final String comunidadElegida = comunidadFirestore;
 
-          await FirebaseMessaging.instance.subscribeToTopic(topicSeguro);
-          print('Suscrito correctamente al topic: $topicSeguro');
+          if (comunidadElegida.isEmpty) {
+            print('⚠️ No se encontró una comunidad válida para el usuario.');
+          } else {
+              // 3) Suscripción persistente centralizada en el helper
+              //    - Normaliza el nombre (espacios, mayúsculas, caracteres)
+              //    - Guarda localmente en SharedPreferences
+              //    - Si ya había otro topic, hace el unsubscribe del anterior
+              //    - Luego subscribe al nuevo topic
+            await TopicSubscription.updateCommunityAndResubscribe(comunidadElegida);
+            print('✅ Suscripción persistente lista para la comunidad: $comunidadElegida');
+          }        
         }
 
         Navigator.pushReplacementNamed(context, '/home');
