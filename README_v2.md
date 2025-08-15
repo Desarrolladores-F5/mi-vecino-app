@@ -15,6 +15,39 @@ Tecnologías: Flutter + Firebase (Auth, Firestore, Storage, Messaging)
 Mi Vecino es una aplicación comunitaria orientada a la cooperación y seguridad entre vecinos.
 Permite a las personas conectarse por comunidad para compartir información, avisos y situaciones de emergencia en su sector.
 
+## 📌  Actualización — Subida de publicaciones con imagen (15-08-2025)
+
+### ✅ Resumen
+Se corrigió y optimizó la funcionalidad de subir publicaciones con imagen al muro, asegurando que:
+- El mensaje y la imagen se suben correctamente a Firebase Storage y Firestore.
+- Se aplican **reglas seguras** en Firebase Storage para proteger las rutas:
+  - `/fotos_perfil/{uid}.jpg` → Solo el usuario dueño puede subir/cambiar su foto de perfil.
+  - `/publicaciones/{uid}/{archivo}` → Solo el usuario dueño puede subir publicaciones en su carpeta.
+- Se manejan casos de error como:
+  1. Archivo inexistente.
+  2. Error de permisos.
+  3. Exceso de tamaño o tipo de archivo inválido.
+
+### 🔧 Cambios realizados
+1. **Método robusto** en `crear_publicacion_screen.dart` para evitar fallos y mostrar mensajes claros en cada caso.
+2. Ajuste de reglas en Firebase Storage con tamaño máximo:
+   - Fotos de perfil: **3 MB**.
+   - Imágenes/PDFs en publicaciones: **10 MB**.
+3. Validación de `contentType` en Storage para permitir solo `image/*` o PDF (opcional).
+4. Pruebas con distintos dispositivos y app cerrada.
+
+### 📂 Rutas seguras en Storage
+- `fotos_perfil/{uid}.jpg`
+- `publicaciones/{uid}/{archivo}`
+
+### 🚀 Resultado
+- Subida de mensajes + imágenes funcionando correctamente en muro.
+- Reglas de seguridad publicadas y probadas con éxito.
+- Compatible con cold start y múltiples usuarios autenticados.
+
+---
+
+
 🚀 Novedades de esta versión
 Muro comunitario funcional:
 

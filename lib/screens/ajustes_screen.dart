@@ -51,8 +51,8 @@ class _AjustesScreenState extends State<AjustesScreen> {
 
       if (_imagen != null) {
         final ref = FirebaseStorage.instance.ref().child('fotos_perfil/$uid.jpg');
-        await ref.putFile(_imagen!);
-        urlImagenSubida = await ref.getDownloadURL();
+        await ref.putFile(_imagen!, SettableMetadata(contentType: 'image/jpeg'));
+        final urlImagenSubida = await ref.getDownloadURL();
       }
 
       await FirebaseFirestore.instance.collection('usuarios').doc(uid).update({

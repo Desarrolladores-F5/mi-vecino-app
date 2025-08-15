@@ -57,32 +57,51 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
     return;
   }
 
-  setState(() {
-    _cargando = true;
-  });
+  setState(() => _cargando = true);
 
-  String? urlArchivo;
+  String? urlArchivo;        // 👈 OJO: usar esta variable (NO volver a declararla abajo)
+  String? tipoArchivo;       // "image" | "pdf" | "otro"
+  String autor = user.email ?? 'Desconocido';
   String? fotoPerfil;
-  String autor = user.email ?? 'Desconocido'; // Por defecto
-  String nombreComunidad = ''; // Nuevo campo
+  String nombreComunidad = '';
 
   try {
-    // 📥 Subir archivo a Firebase Storage si fue seleccionado
+    // 1) Subir archivo a Storage si el usuario eligió uno
     if (_archivoSeleccionado != null) {
       final nombreArchivo = _archivoSeleccionado!.name;
-      final referenciaStorage = FirebaseStorage.instance
-          .ref()
-          .child('publicaciones')
-          .child('${DateTime.now().millisecondsSinceEpoch}_$nombreArchivo');
+      final uid = user.uid;
+      final path = 'publicaciones/$uid/${DateTime.now().millisecondsSinceEpoch}_$nombreArchivo';
+      final ref = FirebaseStorage.instance.ref().child(path);
 
+      final mime = _getMimeType(nombreArchivo); // ya tienes este helper
       final bytes = await _archivoSeleccionado!.readAsBytes();
-      final metadata = SettableMetadata(contentType: _getMimeType(nombreArchivo));
+      final metadata = SettableMetadata(contentType: mime);
 
-      await referenciaStorage.putData(bytes, metadata);
-      urlArchivo = await referenciaStorage.getDownloadURL();
+      try {
+        // Subimos y esperamos a que termine realmente
+        final uploadTask = ref.putData(bytes, metadata);
+        final snap = await uploadTask.whenComplete(() {}); // espera SUCCESS real
+        urlArchivo = await snap.ref.getDownloadURL();      // 👈 asignamos a la variable superior
+
+        // Detectamos tipo de archivo (por si quieres usarlo en UI)
+        if (mime.startsWith('image/')) {
+          tipoArchivo = 'image';
+        } else if (mime == 'application/pdf') {
+          tipoArchivo = 'pdf';
+        } else {
+          tipoArchivo = 'otro';
+        }
+
+        print('✅ Upload OK → $path');
+        print('✅ URL: $urlArchivo');
+      } on FirebaseException catch (e) {
+        // Si falla la subida, seguimos pero sin archivo
+        print('❌ Storage error: ${e.code} - ${e.message}');
+        urlArchivo = null;
+      }
     }
 
-    // 🔍 Obtener nombre real, foto de perfil y nombre de comunidad desde Firestore
+    // 2) Obtener datos del autor (nombre, foto, comunidad)
     final snapshot = await FirebaseFirestore.instance
         .collection('usuarios')
         .doc(user.uid)
@@ -95,36 +114,55 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
       nombreComunidad = data?['nombre_comunidad']?.toString().trim() ?? '';
     }
 
-    // 🕒 Fecha y hora formateada para mostrarla
-    final DateTime ahora = DateTime.now();
-    final String fechaFormateada = DateFormat('dd-MM-yyyy – HH:mm').format(ahora);
+    // 3) Preparar payload para Firestore
+    final ahora = DateTime.now();
+    final fechaFormateada = DateFormat('dd-MM-yyyy – HH:mm').format(ahora);
 
-    // 🔥 Subir la publicación
-    await FirebaseFirestore.instance.collection('publicaciones').add({
+    final dataPublicacion = <String, dynamic>{
       'mensaje': mensaje,
-      'fecha': ahora,
+      // Recomendado: serverTimestamp para orden consistente entre clientes
+      'fecha': FieldValue.serverTimestamp(),
       'fechaFormateada': fechaFormateada,
-      'archivoUrl': urlArchivo ?? '',
-      'archivoNombre': _archivoSeleccionado?.name ?? '',
       'autor': autor,
       'uid': user.uid,
       'fotoPerfil': fotoPerfil ?? '',
-      'nombre_comunidad': nombreComunidad, // ✅ Campo agregado correctamente
-    });
+      'nombre_comunidad': nombreComunidad,
+    };
+
+    // Si subió archivo, guarda el campo que tu UI espera
+    if (urlArchivo != null) {
+      // Tu UI actual usa 'archivoUrl' (según tu código), mantenemos ese nombre:
+      dataPublicacion['archivoUrl'] = urlArchivo;
+      dataPublicacion['archivoNombre'] = _archivoSeleccionado?.name ?? '';
+
+      // Si más adelante quieres distinguir en UI:
+      if (tipoArchivo != null) {
+        dataPublicacion['archivoTipo'] = tipoArchivo; // "image" | "pdf" | "otro"
+      }
+    } else {
+      // Sin archivo: asegura campos coherentes
+      dataPublicacion['archivoUrl'] = '';
+      dataPublicacion['archivoNombre'] = '';
+    }
+
+    // 4) Guardar publicación
+    await FirebaseFirestore.instance
+        .collection('publicaciones')
+        .add(dataPublicacion);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(localizations.publicacionExitosa)),
     );
-    Navigator.pop(context);
+
+    if (mounted) Navigator.pop(context);
+
   } catch (e) {
     print('❌ Error al publicar: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(localizations.errorPublicar)),
     );
   } finally {
-    setState(() {
-      _cargando = false;
-    });
+    if (mounted) setState(() => _cargando = false);
   }
 }
 
@@ -132,6 +170,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
     final ext = filename.toLowerCase();
     if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) return 'image/jpeg';
     if (ext.endsWith('.png')) return 'image/png';
+    if (ext.endsWith('.gif')) return 'image/gif';
     if (ext.endsWith('.pdf')) return 'application/pdf';
     return 'application/octet-stream';
   }
