@@ -138,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final localizations = AppLocalizations.of(context);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF9C4), // 👈 fondo amarillo
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -226,58 +227,71 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${localizations.hola}, ${nombre ?? '---'} 👋',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text('${localizations.direccion}: ${direccion ?? '---'}'),
-                  Text('${localizations.comunidad}: ${comunidad ?? '---'}'),
-                  const SizedBox(height: 24),
-                  Text(localizations.queCompartir, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CrearPublicacionScreen())),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0F7F1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF3EC6A8), width: 1.2),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.edit_note, color: Color(0xFF3EC6A8)),
-                          const SizedBox(width: 10),
-                          Text(localizations.agregaPublicacion, style: const TextStyle(fontSize: 16, color: Colors.black54)),
-                        ],
-                      ),
+                  // ---------- CABECERA BONITA ----------
+                  HomeHeaderCardPro(
+                    localizations: localizations,
+                    nombre: nombre ?? '---',
+                    direccion: direccion ?? '---',
+                    comunidad: comunidad ?? '---',
+                    fotoUrl: fotoUrl,
+                    onCompose: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CrearPublicacionScreen()),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(localizations.muroPublicaciones, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('publicaciones').where('nombre_comunidad', isEqualTo: comunidad?.trim()).orderBy('fecha', descending: true).snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return Text(localizations.sinPublicaciones);
+                  const SizedBox(height: 16),
+                  const Divider(               // 👈 AQUI
+                    thickness: 2,
+                    height: 24,
+                    indent: 8,
+                    endIndent: 8,
+                    color: Color(0xFFE0E0E0),
+                  ),
+                  _SectionDivider(
+                    label: 'Muro de Publicaciones', // o localizations.muroPublicaciones
+                    icon: Icons.dynamic_feed_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  // ---------- FIN CABECERA ----------
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFBBDEFB), // Azul claro 
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFF0B3)),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('publicaciones')
+                          .where('nombre_comunidad', isEqualTo: comunidad?.trim())
+                          .orderBy('fecha', descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return Text(localizations.sinPublicaciones);
+                        }
 
-                      final publicaciones = snapshot.data!.docs;
-                      return Column(
-                        children: publicaciones.map((doc) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          return _publicacionConRespuestas(
-                            doc.id,
-                            data['autor'] ?? localizations.desconocido,
-                            data['fechaFormateada'] ?? '',
-                            data['mensaje'] ?? '',
-                            data['archivoUrl'],
-                            data['fotoPerfil'],
-                            List<String>.from(data['likes'] ?? []),
-                            List<String>.from(data['dislikes'] ?? []),
-                          );
-                        }).toList(),
-                      );
-                    },
+                        final publicaciones = snapshot.data!.docs;
+                        return Column(
+                          children: publicaciones.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            return _publicacionConRespuestas(
+                              doc.id,
+                              data['autor'] ?? localizations.desconocido,
+                              data['fechaFormateada'] ?? '',
+                              data['mensaje'] ?? '',
+                              data['archivoUrl'],
+                              data['fotoPerfil'],
+                              List<String>.from(data['likes'] ?? []),
+                              List<String>.from(data['dislikes'] ?? []),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -374,3 +388,333 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+class _HomeHeaderCard extends StatelessWidget {
+  final AppLocalizations localizations;
+  final String nombre;
+  final String direccion;
+  final String comunidad;
+  final String? fotoUrl;
+  final VoidCallback onCompose;
+
+  const _HomeHeaderCard({
+    required this.localizations,
+    required this.nombre,
+    required this.direccion,
+    required this.comunidad,
+    required this.fotoUrl,
+    required this.onCompose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FAFF), // 👈 leve tinte azulado distinto a las cards del muro
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow( // 👈 un poco más de presencia que una card normal
+            color: Colors.black.withValues(alpha:0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE6ECF7)),
+      ),
+      child: Column(
+        children: [
+          // Franja superior para diferenciarlo del muro
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: primary,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.white,
+                      backgroundImage: (fotoUrl != null && fotoUrl!.isNotEmpty)
+                          ? NetworkImage(fotoUrl!)
+                          : null,
+                      child: (fotoUrl == null || fotoUrl!.isEmpty)
+                          ? const Icon(Icons.person, size: 26, color: Colors.grey)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${localizations.hola}, $nombre 👋',
+                            style: text.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _InfoChip(icon: Icons.home_outlined, label: '${localizations.direccion}: $direccion'),
+                              _InfoChip(icon: Icons.groups_2_outlined, label: '${localizations.comunidad}: $comunidad'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _ComposeButton(
+                  label: localizations.agregaPublicacion,
+                  onPressed: onCompose,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: Icon(icon, size: 18),
+      label: Text(label),
+      backgroundColor: const Color(0xFFF0F3FA),
+      shape: const StadiumBorder(
+        side: BorderSide(color: Color(0xFFE2E7F2)),
+      ),
+    );
+  }
+}
+
+class _ComposeButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  const _ComposeButton({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.add_comment_outlined),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+    );
+  }
+}
+
+class _SectionDivider extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  const _SectionDivider({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 1.2,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE3E8F2),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class HomeHeaderCardPro extends StatelessWidget {
+  final AppLocalizations localizations;
+  final String nombre;
+  final String direccion;
+  final String comunidad;
+  final String? fotoUrl;
+  final VoidCallback onCompose;
+
+  const HomeHeaderCardPro({
+    super.key,
+    required this.localizations,
+    required this.nombre,
+    required this.direccion,
+    required this.comunidad,
+    required this.fotoUrl,
+    required this.onCompose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Card(
+      elevation: 2,
+      margin: EdgeInsets.zero,              // 👈 antes tenía horizontal 16
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Franja superior a todo el ancho (marca jerarquía de sección)
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: scheme.primary,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+          ),
+
+          // Cuerpo de la tarjeta
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F0FF), // 👈 lavanda muy claro (header)
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+              border: Border.all(color: const Color(0xFFE6ECF7)),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Columna izquierda: saludo + info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${localizations.hola}, $nombre 👋',
+                            style: t.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _HeaderInfoRow(
+                            icon: Icons.home_outlined,
+                            text: '${localizations.direccion}: $direccion',
+                          ),
+                          const SizedBox(height: 4),
+                          _HeaderInfoRow(
+                            icon: Icons.groups_2_outlined,
+                            text: '${localizations.comunidad}: $comunidad',
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Avatar a la derecha
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white,
+                      backgroundImage: (fotoUrl != null && fotoUrl!.isNotEmpty)
+                          ? NetworkImage(fotoUrl!)
+                          : null,
+                      child: (fotoUrl == null || fotoUrl!.isEmpty)
+                          ? const Icon(Icons.person, size: 28, color: Colors.grey)
+                          : null,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Botón centrado (ancho cómodo)
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 220, maxWidth: 420),
+                    child: OutlinedButton.icon(
+                      onPressed: onCompose,
+                      icon: const Icon(Icons.add_comment_outlined),
+                      label: Text(localizations.agregaPublicacion),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(color: scheme.primary),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _HeaderInfoRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[700]),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
