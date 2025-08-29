@@ -12,6 +12,7 @@ import 'package:mi_vecino/screens/estado_app_screen.dart';
 import 'package:mi_vecino/screens/ajustes_screen.dart';
 import 'package:mi_vecino/screens/alarma_screen.dart';
 import 'package:mi_vecino/utils/alarma_listener.dart'; // ✅ Listener modular de alarma
+import 'package:mi_vecino/widgets/publicacion_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -274,19 +275,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           return Text(localizations.sinPublicaciones);
                         }
 
+                        final uid = FirebaseAuth.instance.currentUser?.uid ?? ''; // 👈 aquí definimos uid de la linea 292
                         final publicaciones = snapshot.data!.docs;
                         return Column(
                           children: publicaciones.map((doc) {
                             final data = doc.data() as Map<String, dynamic>;
-                            return _publicacionConRespuestas(
-                              doc.id,
-                              data['autor'] ?? localizations.desconocido,
-                              data['fechaFormateada'] ?? '',
-                              data['mensaje'] ?? '',
-                              data['archivoUrl'],
-                              data['fotoPerfil'],
-                              List<String>.from(data['likes'] ?? []),
-                              List<String>.from(data['dislikes'] ?? []),
+                            return PublicacionWidget(
+                              autor: data['autor'] ?? localizations.desconocido,
+                              mensaje: data['mensaje'] ?? '',
+                              fecha: data['fechaFormateada'] ?? '',
+                              publicacionId: doc.id,               // 👈 necesario para subcolección 'respuestas'
+                              autorActual: nombre ?? 'Vecino',     // 👈 nombre del usuario logeado (para Responder)
+                              imageUrl: (data['archivoUrl'] ?? '').toString(), // 👈 AQUÍ para subir imagenes
+
+                              // 👇 NUEVO: para likes/dislikes
+                              uidActual: uid,
+                              likes: List<String>.from(data['likes'] ?? const []),
+                              dislikes: List<String>.from(data['dislikes'] ?? const []),
                             );
                           }).toList(),
                         );
