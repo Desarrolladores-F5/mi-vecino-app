@@ -13,6 +13,16 @@ import 'package:mi_vecino/screens/ajustes_screen.dart';
 import 'package:mi_vecino/screens/alarma_screen.dart';
 import 'package:mi_vecino/utils/alarma_listener.dart'; // ✅ Listener modular de alarma
 import 'package:mi_vecino/widgets/publicacion_widget.dart';
+import 'dart:math' as math;
+import 'package:flutter_svg/flutter_svg.dart';
+
+// Lista de patrones disponibles
+const _svgPatterns = <String>[
+  'assets/patterns/comunidad01.svg',
+  'assets/patterns/comunidad02.svg',
+  'assets/patterns/comunidad03.svg',
+  'assets/patterns/comunidad04.svg',
+];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -254,53 +264,85 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 8),
                   // ---------- FIN CABECERA ----------
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFBBDEFB), // Azul claro 
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFF0B3)),
-                    ),
-                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('publicaciones')
-                          .where('nombre_comunidad', isEqualTo: comunidad?.trim())
-                          .orderBy('fecha', descending: true)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return Text(localizations.sinPublicaciones);
-                        }
 
-                        final uid = FirebaseAuth.instance.currentUser?.uid ?? ''; // 👈 aquí definimos uid de la linea 292
-                        final publicaciones = snapshot.data!.docs;
-                        return Column(
-                          children: publicaciones.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-                            return PublicacionWidget(
-                              autor: data['autor'] ?? localizations.desconocido,
-                              mensaje: data['mensaje'] ?? '',
-                              fecha: data['fechaFormateada'] ?? '',
-                              publicacionId: doc.id,               // 👈 necesario para subcolección 'respuestas'
-                              autorActual: nombre ?? 'Vecino',     // 👈 nombre del usuario logeado (para Responder)
-                              imageUrl: (data['archivoUrl'] ?? '').toString(), // 👈 AQUÍ para subir imagenes
+                  // ---------- MURO con fondo amarillo + SVGs translúcidos (alternados) ----------                  
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      children: [
+                        // Base: amarillo suave
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBE6),
+                            border: Border.all(color: const Color(0xFFFFF0B3)),
+                          ),
+                        ),
 
-                              // 👇 NUEVO: para likes/dislikes
-                              uidActual: uid,
-                              likes: List<String>.from(data['likes'] ?? const []),
-                              dislikes: List<String>.from(data['dislikes'] ?? const []),
-                            );
-                          }).toList(),
-                        );
-                      },
+                        // Patrones SVG alternados (2 marcas de agua por layout)
+                        _buildTiledWatermarksGrid(
+                          ((comunidad ?? '').hashCode).abs() % 4, // semilla estable por comunidad
+                          perRow: 2,        // 2 por fila (una a cada lado)
+                          tileH: 150,       // más chico = más densidad vertical
+                          iconSize: 130,    // tamaño de cada marca
+                          sidePadding: 12,  // margen lateral
+                          opacity: 0.055,   // sutil
+                        ),
+
+                        // Contenido real del muro
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('publicaciones')
+                                .where('nombre_comunidad', isEqualTo: comunidad?.trim())
+                                .orderBy('fecha', descending: true)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                return Text(localizations.sinPublicaciones);
+                              }
+
+                              final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+                              final publicaciones = snapshot.data!.docs;
+
+                              return Column(
+                                children: List.generate(publicaciones.length, (i) {
+                                      final doc  = publicaciones[i];
+                                      final data = doc.data() as Map<String, dynamic>;
+
+                                      return StaggeredFadeIn(
+                                        key: ValueKey(doc.id),   // para que Flutter detecte el mismo ítem
+                                        index: i,                // esto aplica el delay escalonado
+                                        baseDelay: const Duration(milliseconds: 50),
+                                        duration: const Duration(milliseconds: 320),
+                                        dy: 10,                  // rebote vertical inicial (px)
+                                        child: PublicacionWidget(
+                                        autor: data['autor'] ?? localizations.desconocido,
+                                        mensaje: data['mensaje'] ?? '',
+                                        fecha: data['fechaFormateada'] ?? '',
+                                        publicacionId: doc.id,
+                                        autorActual: nombre ?? 'Vecino',
+                                        imageUrl: (data['archivoUrl'] ?? '').toString(),
+                                        uidActual: uid,
+                                        likes: List<String>.from(data['likes'] ?? const []),
+                                        dislikes: List<String>.from(data['dislikes'] ?? const []),
+                                      ),                                    
+                                    );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                  // ---------- FIN MURO ----------
+                ]
               ),
-            ),
+          ),
     );
   }
 
@@ -723,3 +765,187 @@ class _HeaderInfoRow extends StatelessWidget {
   }
 }
 
+List<Widget> _buildWatermarks(int seed) {
+  final a = _svgPatterns[seed % _svgPatterns.length];
+  final b = _svgPatterns[(seed + 1) % _svgPatterns.length];
+
+  return [
+    // Esquina superior derecha
+    Positioned(
+      right: -10,
+      top: -10,
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: 0.06,
+          child: Transform.rotate(
+            angle: -6 * math.pi / 180,
+            child: SvgPicture.asset(
+              a,
+              width: 180,
+              height: 180,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    ),
+    // Esquina inferior izquierda (espejo + rotación leve)
+    Positioned(
+      left: -14,
+      bottom: -14,
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: 0.05,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..rotateZ(5 * math.pi / 180)
+              ..scale(-1.0, 1.0),
+            child: SvgPicture.asset(
+              b,
+              width: 160,
+              height: 160,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    ),
+  ];
+}
+
+Widget _buildTiledWatermarksGrid(
+  int seed, {
+  int perRow = 2,          // 2 marcas por fila (izq + der)
+  double tileH = 160,      // menor = más filas (más denso)
+  double iconSize = 140,   // tamaño de cada marca
+  double sidePadding = 16, // margen lateral
+  double opacity = 0.06,   // opacidad global
+}) {
+  String pick(int i) => _svgPatterns[(seed + i) % _svgPatterns.length];
+
+  return Positioned.fill(
+    child: IgnorePointer(
+      child: Opacity(
+        opacity: opacity,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxW = constraints.maxWidth;
+            final maxH = constraints.maxHeight.isFinite
+                ? constraints.maxHeight
+                : 1200.0; // fallback por si aún no hay altura “real”
+            final rows = (maxH / tileH).ceil().clamp(1, 400);
+
+            final List<Widget> marks = [];
+            double y = 0;
+
+            for (int row = 0; row < rows; row++, y += tileH) {
+              final a = pick(row * 2);
+              final b = pick(row * 2 + 1);
+              final rotA = (row.isEven ? -6 : -3) * 3.1415926535 / 180;
+              final rotB = (row.isEven ?  5 :  2) * 3.1415926535 / 180;
+
+              if (perRow == 1) {
+                // una marca centrada
+                marks.add(Positioned(
+                  top: y,
+                  left: (maxW - iconSize) / 2,
+                  width: iconSize,
+                  height: iconSize,
+                  child: Transform.rotate(
+                    angle: rotA,
+                    child: SvgPicture.asset(a, fit: BoxFit.contain),
+                  ),
+                ));
+              } else {
+                // izquierda
+                marks.add(Positioned(
+                  top: y,
+                  left: sidePadding,
+                  width: iconSize,
+                  height: iconSize,
+                  child: Transform.rotate(
+                    angle: rotA,
+                    child: SvgPicture.asset(a, fit: BoxFit.contain),
+                  ),
+                ));
+                // derecha
+                marks.add(Positioned(
+                  top: y,
+                  right: sidePadding,
+                  width: iconSize,
+                  height: iconSize,
+                  child: Transform.rotate(
+                    angle: rotB,
+                    child: SvgPicture.asset(b, fit: BoxFit.contain),
+                  ),
+                ));
+              }
+            }
+
+            // ¡No hay Column! Sólo un Stack con elementos posicionados.
+            return Stack(clipBehavior: Clip.hardEdge, children: marks);
+          },
+        ),
+      ),
+    ),
+  );
+}
+
+class StaggeredFadeIn extends StatefulWidget {
+  const StaggeredFadeIn({
+    super.key,
+    required this.child,
+    this.index = 0,
+    this.baseDelay = const Duration(milliseconds: 60),
+    this.duration = const Duration(milliseconds: 300),
+    this.dy = 8.0, // cuánto se desplaza hacia arriba al aparecer
+  });
+
+  final Widget child;
+  final int index;
+  final Duration baseDelay;
+  final Duration duration;
+  final double dy;
+
+  @override
+  State<StaggeredFadeIn> createState() => _StaggeredFadeInState();
+}
+
+class _StaggeredFadeInState extends State<StaggeredFadeIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: widget.duration);
+    _fade = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
+    _slide = Tween<Offset>(begin: Offset(0, widget.dy / 100), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+
+    // disparo escalonado
+    Future.delayed(widget.baseDelay * widget.index, () {
+      if (mounted) _c.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
+      ),
+    );
+  }
+}

@@ -67,24 +67,30 @@ class PublicacionWidget extends StatelessWidget {
     }
     await batch.commit();
   }
-
+  
+    
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final text = theme.textTheme;
     final muted = Colors.grey.shade600;
+    
+    // 🎨 Paleta para la tarjeta
+    const cardBg     = Color(0xFFF1F5FF); // celeste muy suave
+    const cardBorder = Color(0xFFDCE6FF); // borde a juego
+    const sepColor   = Color(0xFFE6EBFF); // separador sutil
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,                         // 👈 fondo celeste aplicado
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F1F1)),
+        border: Border.all(color: cardBorder), // borde a juego
         boxShadow: const [
           BoxShadow(
             color: Color.fromARGB(20, 0, 0, 0),
-            blurRadius: 12,
-            offset: Offset(0, 6),
+            blurRadius: 10,
+            offset: Offset(0, 5),
           ),
         ],
       ),
@@ -136,13 +142,13 @@ class PublicacionWidget extends StatelessWidget {
                       return Stack(
                         fit: StackFit.expand,
                         children: [
-                          Container(color: Colors.black.withOpacity(0.04)),
+                          Container(color: cardBorder.withOpacity(0.2)), // 👈 mantiene tono celeste
                           Center(child: CircularProgressIndicator(value: value)),
                         ],
                       );
                     },
                     errorBuilder: (_, __, ___) => Container(
-                      color: Colors.black12,
+                      color: cardBorder.withOpacity(0.25), // 👈 mantiene celeste
                       alignment: Alignment.center,
                       child: const Icon(Icons.broken_image_outlined, size: 28),
                     ),
@@ -151,18 +157,15 @@ class PublicacionWidget extends StatelessWidget {
               ),
             ],
 
-            // Separador sutil
+            // Separador
             const SizedBox(height: 12),
             Container(
               height: 1,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F0F0),
-                borderRadius: BorderRadius.circular(1),
-              ),
+              color: sepColor, // 👈 separador celeste sutil
             ),
             const SizedBox(height: 6),
 
-            // Footer con acciones
+            // Footer con acciones (likes/dislikes + responder)
             Row(
               children: [
                 _Reaction(
@@ -200,8 +203,8 @@ class PublicacionWidget extends StatelessWidget {
                 ),
               ],
             ),
-            
-            // 💬 Respuestas (si hay publicacionId)
+
+            // 💬 Respuestas (sub-comentarios)
             if (publicacionId != null) ...[
               const SizedBox(height: 6),
               StreamBuilder<QuerySnapshot>(
@@ -234,7 +237,7 @@ class PublicacionWidget extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 8, horizontal: 10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF7F7FB),
+                                  color: cardBorder.withOpacity(0.2), // 👈 fondo respuesta celestito
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: RichText(
@@ -431,3 +434,5 @@ class _ReactionState extends State<_Reaction> {
     );
   }
 }
+
+
