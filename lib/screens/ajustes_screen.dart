@@ -1,9 +1,10 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mi_vecino/l10n/app_localizations.dart';
 
 class AjustesScreen extends StatefulWidget {
@@ -15,10 +16,13 @@ class AjustesScreen extends StatefulWidget {
 
 class _AjustesScreenState extends State<AjustesScreen> {
   final _nombreController = TextEditingController();
+
   bool notificacionesActivadas = false;
-  File? _imagen;
-  String? _urlFotoPerfil;
-  bool _cargando = false; // ✅ Booleano para mostrar loading
+  bool _cargando = false;
+
+  File? _imagen;                 // Imagen elegida localmente (previa a subir)
+  String? _urlFotoPerfil;        // URL base guardada en Firestore (sin bust)
+  int? _bustTsMs;                // Timestamp (ms) para bustear cache de NetworkImage
 
   @override
   void initState() {
@@ -26,55 +30,41 @@ class _AjustesScreenState extends State<AjustesScreen> {
     _cargarDatosUsuario();
   }
 
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    super.dispose();
+  }
+
+  /// Carga nombre, fotoPerfil y preferencias desde Firestore
   Future<void> _cargarDatosUsuario() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
-      final data = doc.data();
-      if (data != null) {
-        _nombreController.text = data['nombre'] ?? '';
-        _urlFotoPerfil = data['fotoPerfil'];
-        notificacionesActivadas = data['notificaciones'] ?? false;
-        setState(() {});
-      }
+    if (uid == null) return;
+
+    final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
+    final data = doc.data();
+    if (data == null) return;
+
+    _nombreController.text = (data['nombre'] ?? '') as String;
+    _urlFotoPerfil = data['fotoPerfil'] as String?;
+    notificacionesActivadas = (data['notificaciones'] ?? false) as bool;
+
+    // Si existe photoUpdatedAt, úsalo para bustear cache
+    final ts = data['photoUpdatedAt'];
+    if (ts is Timestamp) {
+      _bustTsMs = ts.millisecondsSinceEpoch;
     }
+
+    setState(() {});
   }
 
-  Future<void> _guardarCambios() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      setState(() {
-        _cargando = true; // ✅ Activamos loading
-      });
-
-      String? urlImagenSubida = _urlFotoPerfil;
-
-      if (_imagen != null) {
-        final ref = FirebaseStorage.instance.ref().child('fotos_perfil/$uid.jpg');
-        await ref.putFile(_imagen!, SettableMetadata(contentType: 'image/jpeg'));
-        final urlImagenSubida = await ref.getDownloadURL();
-      }
-
-      await FirebaseFirestore.instance.collection('usuarios').doc(uid).update({
-        'nombre': _nombreController.text.trim(),
-        'fotoPerfil': urlImagenSubida,
-        'notificaciones': notificacionesActivadas,
-      });
-
-      setState(() {
-        _urlFotoPerfil = urlImagenSubida; // ✅ Actualizamos la URL para mostrar la nueva imagen
-        _cargando = false; // ✅ Desactivamos loading
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).cambiosGuardados)),
-      );
-    }
-  }
-
+  /// Selecciona imagen desde galería
   Future<void> _seleccionarImagen() async {
     final picker = ImagePicker();
-    final imagen = await picker.pickImage(source: ImageSource.gallery);
+    final imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80, // comprime para subir más rápido
+    );
     if (imagen != null) {
       setState(() {
         _imagen = File(imagen.path);
@@ -82,20 +72,97 @@ class _AjustesScreenState extends State<AjustesScreen> {
     }
   }
 
+  /// Sube la imagen (si hay) y guarda nombre/foto/notificaciones en Firestore
+  Future<void> _guardarCambios() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    setState(() => _cargando = true);
+
+    try {
+      // Mantén el valor actual por defecto
+      String? urlImagenSubida = _urlFotoPerfil;
+
+      // Si el usuario seleccionó una imagen, súbela y obtén el downloadURL
+      if (_imagen != null) {
+        final ref = FirebaseStorage.instance.ref().child('fotos_perfil/$uid.jpg');
+
+        final uploadTask = ref.putFile(
+          _imagen!,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+
+        final snap = await uploadTask.whenComplete(() {});
+        urlImagenSubida = await snap.ref.getDownloadURL();
+
+        // ignore: avoid_print
+        print('Avatar subido. URL: $urlImagenSubida');
+      }
+
+      // Usa serverTimestamp para que todos los clientes lo vean igual
+      await FirebaseFirestore.instance.collection('usuarios').doc(uid).update({
+        'nombre': _nombreController.text.trim(),
+        'fotoPerfil': urlImagenSubida,
+        'notificaciones': notificacionesActivadas,
+        'photoUpdatedAt': FieldValue.serverTimestamp(), // ayuda con cache-busting
+      });
+
+      // Refresca estado local: URL y bust de cache (usa NOW para reflejar altiro en UI)
+      setState(() {
+        _urlFotoPerfil = urlImagenSubida;
+        _bustTsMs = DateTime.now().millisecondsSinceEpoch; // bust local inmediato
+        _cargando = false;
+        _imagen = null; // ya no necesitamos guardar el File local
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).cambiosGuardados)),
+        );
+      }
+    } on FirebaseException catch (e) {
+      setState(() => _cargando = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error Storage: ${e.code} - ${e.message}')),
+        );
+      }
+    } catch (e) {
+      setState(() => _cargando = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar: $e')),
+        );
+      }
+    }
+  }
+
+  /// Devuelve una URL con query param para bustear cache si hay timestamp
+  String? _urlConBust(String? base) {
+    if (base == null || base.isEmpty) return null;
+    if (_bustTsMs == null) return base;
+    final sep = base.contains('?') ? '&' : '?';
+    return '$base${sep}ts=$_bustTsMs';
+    }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+
+    final String? busted = _urlConBust(_urlFotoPerfil);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.ajustes),
         backgroundColor: const Color(0xFF3EC6A8),
       ),
       body: _cargando
-          ? const Center(child: CircularProgressIndicator()) // ✅ Loading visual
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+                  // Avatar + botón para seleccionar imagen
                   GestureDetector(
                     onTap: _seleccionarImagen,
                     child: Stack(
@@ -103,10 +170,13 @@ class _AjustesScreenState extends State<AjustesScreen> {
                       children: [
                         CircleAvatar(
                           radius: 50,
+                          backgroundColor: Colors.grey.shade200,
                           backgroundImage: _imagen != null
+                              // Si el usuario eligió una imagen, muéstrala al tiro
                               ? FileImage(_imagen!)
-                              : (_urlFotoPerfil != null
-                                  ? NetworkImage(_urlFotoPerfil!)
+                              // Si hay URL (con bust), úsala; si no, usa el asset por defecto
+                              : (busted != null
+                                  ? NetworkImage(busted)
                                   : const AssetImage('assets/default_avatar.png')) as ImageProvider,
                         ),
                         Positioned(
@@ -128,7 +198,9 @@ class _AjustesScreenState extends State<AjustesScreen> {
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   TextField(
                     controller: _nombreController,
                     decoration: InputDecoration(
@@ -136,23 +208,28 @@ class _AjustesScreenState extends State<AjustesScreen> {
                       border: const OutlineInputBorder(),
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   SwitchListTile(
                     title: Text(localizations.activarNotificaciones),
                     value: notificacionesActivadas,
-                    onChanged: (valor) {
-                      setState(() {
-                        notificacionesActivadas = valor;
-                      });
-                    },
+                    onChanged: (valor) => setState(() {
+                      notificacionesActivadas = valor;
+                    }),
                   ),
+
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _guardarCambios,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3EC6A8),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _cargando ? null : _guardarCambios,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3EC6A8),
+                      ),
+                      child: Text(localizations.guardarCambios),
                     ),
-                    child: Text(localizations.guardarCambios),
                   ),
                 ],
               ),

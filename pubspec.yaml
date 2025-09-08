@@ -84,6 +84,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/default_avatar.png
     - assets/logo.png
     - assets/sounds/alarma_vecinal_chat_ready.mp3
     - assets/patterns/  

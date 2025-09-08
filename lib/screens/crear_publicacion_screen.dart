@@ -125,7 +125,9 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
       'fechaFormateada': fechaFormateada,
       'autor': autor,
       'uid': user.uid,
+      'autorUid': user.uid,           // 👈 agregado (útil a futuro)
       'fotoPerfil': fotoPerfil ?? '',
+      'autorFoto': fotoPerfil ?? '',   // 👈 alias para máxima compatibilidad
       'nombre_comunidad': nombreComunidad,
     };
 

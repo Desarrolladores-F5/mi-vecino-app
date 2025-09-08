@@ -12,7 +12,6 @@ import 'package:mi_vecino/screens/estado_app_screen.dart';
 import 'package:mi_vecino/screens/ajustes_screen.dart';
 import 'package:mi_vecino/screens/alarma_screen.dart';
 import 'package:mi_vecino/utils/alarma_listener.dart'; // ✅ Listener modular de alarma
-import 'package:mi_vecino/widgets/publicacion_widget.dart';
 import 'dart:math' as math;
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -40,6 +39,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Map<String, bool> mostrarFormulario = {};
   Map<String, TextEditingController> controladoresRespuesta = {};
+
+  // === AVATARES POR AUTOR (CACHE simple en memoria) =============================
+
+// Cache en memoria: nombre del autor -> url de foto de perfil (fotoPerfil en 'usuarios')
+  final Map<String, String?> _avatarCacheByName = {};
+
+  /// Retorna la URL de foto de perfil para un autor (por su nombre) y la cachea.
+  /// Nota: lo ideal a futuro es denormalizar (guardar autorFoto en el doc de la publicación),
+  /// pero con esto lo resolvemos rápido sin tocar más estructuras.
+  Future<String?> _getAvatarByAutorName(String autorNombre) async {
+    if (_avatarCacheByName.containsKey(autorNombre)) {
+      return _avatarCacheByName[autorNombre];
+    }
+
+    // Consulta mínima: busca en 'usuarios' por nombre exacto
+    final q = await FirebaseFirestore.instance
+        .collection('usuarios')
+        .where('nombre', isEqualTo: autorNombre)
+        .limit(1)
+        .get();
+
+    final url = q.docs.isNotEmpty ? (q.docs.first.data()['fotoPerfil'] as String?) : null;
+    _avatarCacheByName[autorNombre] = url;
+    return url;
+  }
+  // ==============================================================================
 
   @override
   void initState() {
@@ -310,28 +335,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               return Column(
                                 children: List.generate(publicaciones.length, (i) {
-                                      final doc  = publicaciones[i];
-                                      final data = doc.data() as Map<String, dynamic>;
+                                  final doc  = publicaciones[i];
+                                  final data = doc.data() as Map<String, dynamic>;
 
-                                      return StaggeredFadeIn(
-                                        key: ValueKey(doc.id),   // para que Flutter detecte el mismo ítem
-                                        index: i,                // esto aplica el delay escalonado
-                                        baseDelay: const Duration(milliseconds: 50),
-                                        duration: const Duration(milliseconds: 320),
-                                        dy: 10,                  // rebote vertical inicial (px)
-                                        child: PublicacionWidget(
-                                        autor: data['autor'] ?? localizations.desconocido,
-                                        mensaje: data['mensaje'] ?? '',
-                                        fecha: data['fechaFormateada'] ?? '',
-                                        publicacionId: doc.id,
-                                        autorActual: nombre ?? 'Vecino',
-                                        imageUrl: (data['archivoUrl'] ?? '').toString(),
-                                        uidActual: uid,
-                                        likes: List<String>.from(data['likes'] ?? const []),
-                                        dislikes: List<String>.from(data['dislikes'] ?? const []),
-                                      ),                                    
+                                  // Campos base del post
+                                  final autor      = (data['autor'] ?? localizations.desconocido).toString();
+                                  final mensaje    = (data['mensaje'] ?? '').toString();
+                                  final fecha      = (data['fechaFormateada'] ?? '').toString();
+                                  final archivoUrl = (data['archivoUrl'] ?? '').toString();
+                                  final likes      = List<String>.from(data['likes'] ?? const []);
+                                  final dislikes   = List<String>.from(data['dislikes'] ?? const []);
+
+                                  // Si el post trae la foto denormalizada (futura mejora), úsala directo
+                                  final autorFotoDenorm = (data['autorFoto'] ?? data['fotoPerfilAutor'] ?? data['fotoPerfil']) as String?;
+
+                                  Widget buildItem(String? fotoPerfil) {
+                                    return StaggeredFadeIn(
+                                      key: ValueKey(doc.id),
+                                      index: i,
+                                      baseDelay: const Duration(milliseconds: 50),
+                                      duration: const Duration(milliseconds: 320),
+                                      dy: 10,
+                                      child: _publicacionConRespuestas(
+                                        doc.id,
+                                        autor,
+                                        fecha,
+                                        mensaje,
+                                        archivoUrl.isNotEmpty ? archivoUrl : null,
+                                        fotoPerfil,                 // 👈 pasamos la URL del avatar del autor
+                                        likes,
+                                        dislikes,
+                                      ),
                                     );
-                                }).toList(),
+                                  }
+
+                                  // 1) si ya viene foto en el post → úsala
+                                  if (autorFotoDenorm != null && autorFotoDenorm.isNotEmpty) {
+                                    return buildItem(autorFotoDenorm);
+                                  }
+
+                                  // 2) si no viene → buscamos una sola vez por nombre (con cache en memoria)
+                                  return FutureBuilder<String?>(
+                                    future: _getAvatarByAutorName(autor),
+                                    builder: (context, snap) => buildItem(snap.data),
+                                  );
+                                }),
                               );
                             },
                           ),
@@ -363,9 +411,13 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           CircleAvatar(
-            backgroundImage: fotoPerfil != null ? NetworkImage(fotoPerfil) : null,
-            child: fotoPerfil == null ? const Icon(Icons.person) : null,
+            radius: 18,
+            backgroundColor: Colors.white,
+            backgroundImage: (fotoPerfil != null && fotoPerfil.isNotEmpty)
+                ? NetworkImage(fotoPerfil)
+                : const AssetImage('assets/default_avatar.png') as ImageProvider,
           ),
+
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(autor, style: const TextStyle(fontWeight: FontWeight.bold)),
