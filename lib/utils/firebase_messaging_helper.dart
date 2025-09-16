@@ -1,56 +1,55 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_core/firebase_core.dart'; // Necesario para background handler
+import 'package:firebase_core/firebase_core.dart'; // Requerido en background
 import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // 👈 Para filtrar al emisor
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Configura FCM para:
 /// - Pedir permisos
-/// - Manejar aperturas de notificación (segundo plano / app terminada)
+/// - Manejar aperturas de notificación (tap) en background/killed
 /// - Registrar handler de background
+/// Nota: NO reproducimos audio aquí (lo maneja AlarmaScreen por Firestore).
 Future<void> setupFCM(FlutterLocalNotificationsPlugin fln) async {
   final messaging = FirebaseMessaging.instance;
 
-  // ✅ Solicita permisos para notificaciones (iOS / Android 13+ se respeta)
+  // Permisos (iOS / Android 13+)
   await messaging.requestPermission();
 
-  // ✅ Registrar handler para mensajes en segundo plano (obligatorio antes de cualquier listener)
+  // Handler global en segundo plano
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // ✅ Si la notificación abrió la app desde "terminada" (killed)
+  // Si la notificación abrió la app desde terminada
   final initialMessage = await messaging.getInitialMessage();
   if (initialMessage != null) {
-    print('getInitialMessage -> data: ${initialMessage.data}');
+    // print('getInitialMessage -> data: ${initialMessage.data}');
     await _handleNotificationTap(initialMessage);
   }
 
-  // ✅ Cuando el usuario TOCA la notificación y la app pasa a primer plano (estaba en 2º plano)
+  // Cuando el usuario toca la notificación con la app en 2º plano
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    print('onMessageOpenedApp -> data: ${message.data}');
+    // print('onMessageOpenedApp -> data: ${message.data}');
     await _handleNotificationTap(message);
   });
 
   // ⚠️ Importante:
-  // NO mostramos banner aquí en onMessage (foreground) para NO duplicar,
-  // porque ya lo estás manejando en main.dart con flutterLocalNotificationsPlugin.show(...)
-  // Si algún día quieres mover esa lógica aquí, avísame y lo centralizamos en un solo lugar.
+  // Si tienes onMessage en otro lado mostrando banners locales,
+  // evita duplicarlo aquí para no mostrar dos notificaciones.
 }
 
-/// ✅ Lógica común cuando el usuario toca la notificación
-/// - Filtra emisor
-/// - Abre Google Maps si viene mapUrl
+/// Lógica común cuando el usuario toca la notificación
+/// - Filtra remitente (para no abrir en el dispositivo emisor)
+/// - Abre Google Maps si viene 'mapUrl'
 Future<void> _handleNotificationTap(RemoteMessage message) async {
   final data = message.data;
 
-  // Filtrar al emisor (si el UID actual coincide con emisorId, no hacemos nada)
+  // No hacer nada si el emisor es el mismo usuario
   final emisorId = data['emisorId'];
   final currentUid = FirebaseAuth.instance.currentUser?.uid;
   if (emisorId != null && currentUid != null && emisorId == currentUid) {
-    // Es el dispositivo que envió la alerta: no abrimos nada.
     return;
   }
 
-  // Si viene un link de mapa, lo abrimos en Google Maps
+  // Abrir mapas si corresponde
   final mapUrl = data['mapUrl'];
   if (mapUrl != null && mapUrl is String && mapUrl.isNotEmpty) {
     final uri = Uri.parse(mapUrl);
@@ -58,11 +57,24 @@ Future<void> _handleNotificationTap(RemoteMessage message) async {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
+
+  // Si quieres navegar a una pantalla según 'route': data['route']...
 }
 
-// ✅ Handler para mensajes en segundo plano (Android/iOS)
+// Handler en segundo plano
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(); // Requerido para acceder a Firebase en background
-  // Aquí puedes manejar datos del mensaje si necesitas (logging, etc.)
-  // print('📩 Mensaje en segundo plano: ${message.messageId}');
+  await Firebase.initializeApp();
+  // Log opcional:
+  // print('📩 Background message: ${message.messageId}');
+}
+
+/// (Opcional) Limpia suscripciones antiguas de topics de alarma para evitar sonidos fantasma.
+/// Llama una vez al iniciar (main o Home).
+Future<void> unsubscribeLegacyAlarmTopics() async {
+  final fcm = FirebaseMessaging.instance;
+  // Agrega aquí los topics que usaste en pruebas:
+  await fcm.unsubscribeFromTopic('alarma_global');
+  await fcm.unsubscribeFromTopic('alarma_casa_k8');
+  await fcm.unsubscribeFromTopic('alarma_casa_k9');
+  // ...cualquier otro que recuerdes.
 }

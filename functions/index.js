@@ -1,4 +1,4 @@
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2/options");
 const admin = require("firebase-admin");
 
@@ -77,4 +77,77 @@ exports.notificarPanicAlert = onDocumentCreated("panic_alerts/{alertId}", async 
   } catch (err) {
     console.error("Error enviando notificación:", err);
   }
+});
+
+/** 🚨 NUEVA: alarma → alarmas_activas/{comunidadId} */
+exports.onAlarmWrite = onDocumentWritten("alarmas_activas/{comunidadId}", async (event) => {
+  const before = event.data?.before?.data() || null;
+  const after  = event.data?.after?.data()  || null;
+  if (!after) return;
+
+  if (before && before.activa === after.activa) return; // no cambió estado
+
+  function toTopic(communityName) {
+    return "comunidad_" + String(communityName || "")
+      .trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "");
+  }
+
+  const comunidadId = event.params.comunidadId;           // ej: "Jardines de Paso Hondo 2"
+  const activa      = after.activa === true;
+  const durationSec = Number.isInteger(after.durationSec) ? after.durationSec : 5;
+  const activadaPor = String(after.activada_por_direccion || after.activada_por || "");
+
+  const topic = toTopic(comunidadId);
+
+  if (activa) {
+    const message = {
+      topic,
+      notification: {
+        title: "🚨 Alarma vecinal",
+        body: activadaPor
+          ? `Alarma activada desde: ${activadaPor}`
+          : "Se activó una alarma en tu comunidad",
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "alarma_vecinal",                // 👈 debe existir el canal en la app
+          sound: "alarma_vecinal_chat_ready",         // 👈 archivo en res/raw (sin .mp3)
+          ticker: "Alarma vecinal",
+        },
+      },
+      apns: {
+        headers: { "apns-priority": "10" },
+        payload: {
+          aps: {
+            alert: {
+              title: "🚨 Alarma vecinal",
+              body: activadaPor
+                ? `Alarma activada desde: ${activadaPor}`
+                : "Se activó una alarma en tu comunidad",
+            },
+            // Para sonido custom en iOS, agregar .caf al bundle y setear: sound: "alarma_vecinal_chat_ready.caf"
+          },
+        },
+      },
+      data: {
+        type: "alarm",
+        comunidadId,
+        activada_por: activadaPor,
+        durationSec: String(durationSec),
+      },
+    };
+
+    try {
+      const id = await admin.messaging().send(message);
+      console.log("FCM alarm ID:", id, "topic:", topic, "data:", { comunidadId, activadaPor, durationSec });
+    } catch (err) {
+      console.error("Error enviando notificación de alarma:", err);
+    }
+  
+  }
+  
 });

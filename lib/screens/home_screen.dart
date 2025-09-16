@@ -12,6 +12,7 @@ import 'package:mi_vecino/screens/estado_app_screen.dart';
 import 'package:mi_vecino/screens/ajustes_screen.dart';
 import 'package:mi_vecino/screens/alarma_screen.dart';
 import 'package:mi_vecino/utils/alarma_listener.dart'; // ✅ Listener modular de alarma
+import 'package:mi_vecino/widgets/publicacion_widget.dart';
 import 'dart:math' as math;
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -126,14 +127,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final nombreUsuario = usuario['nombre'] ?? 'Anónimo';
 
     await FirebaseFirestore.instance
-        .collection('publicaciones')
-        .doc(docId)
+        .collection('publicaciones').doc(docId)        
         .collection('respuestas')
         .add({
-      'texto': texto,
-      'autor': nombreUsuario,
-      'fecha': DateTime.now(),
-    });
+          'uid'  : uid,                 // ← REQUERIDO por la regla
+          'mensaje': texto,            // ← nombre que espera la regla
+          'autor': nombreUsuario,
+          'fecha': FieldValue.serverTimestamp(),
+        });
 
     controladoresRespuesta[docId]?.clear();
     setState(() {
@@ -334,52 +335,46 @@ class _HomeScreenState extends State<HomeScreen> {
                               final publicaciones = snapshot.data!.docs;
 
                               return Column(
-                                children: List.generate(publicaciones.length, (i) {
-                                  final doc  = publicaciones[i];
+                                children: publicaciones.map((doc) {
                                   final data = doc.data() as Map<String, dynamic>;
 
-                                  // Campos base del post
-                                  final autor      = (data['autor'] ?? localizations.desconocido).toString();
-                                  final mensaje    = (data['mensaje'] ?? '').toString();
-                                  final fecha      = (data['fechaFormateada'] ?? '').toString();
-                                  final archivoUrl = (data['archivoUrl'] ?? '').toString();
-                                  final likes      = List<String>.from(data['likes'] ?? const []);
-                                  final dislikes   = List<String>.from(data['dislikes'] ?? const []);
-
-                                  // Si el post trae la foto denormalizada (futura mejora), úsala directo
-                                  final autorFotoDenorm = (data['autorFoto'] ?? data['fotoPerfilAutor'] ?? data['fotoPerfil']) as String?;
-
-                                  Widget buildItem(String? fotoPerfil) {
-                                    return StaggeredFadeIn(
-                                      key: ValueKey(doc.id),
-                                      index: i,
-                                      baseDelay: const Duration(milliseconds: 50),
-                                      duration: const Duration(milliseconds: 320),
-                                      dy: 10,
-                                      child: _publicacionConRespuestas(
-                                        doc.id,
-                                        autor,
-                                        fecha,
-                                        mensaje,
-                                        archivoUrl.isNotEmpty ? archivoUrl : null,
-                                        fotoPerfil,                 // 👈 pasamos la URL del avatar del autor
-                                        likes,
-                                        dislikes,
-                                      ),
-                                    );
-                                  }
-
-                                  // 1) si ya viene foto en el post → úsala
-                                  if (autorFotoDenorm != null && autorFotoDenorm.isNotEmpty) {
-                                    return buildItem(autorFotoDenorm);
-                                  }
-
-                                  // 2) si no viene → buscamos una sola vez por nombre (con cache en memoria)
-                                  return FutureBuilder<String?>(
-                                    future: _getAvatarByAutorName(autor),
-                                    builder: (context, snap) => buildItem(snap.data),
+                                  return FutureBuilder<QuerySnapshot>(
+                                    future: FirebaseFirestore.instance
+                                        .collection('usuarios')
+                                        .where('nombre', isEqualTo: data['autor']) // busca al autor por nombre
+                                        .limit(1)
+                                        .get(),
+                                    builder: (context, snap) {
+                                      String? fotoPerfil;
+                                      if (snap.hasData && snap.data!.docs.isNotEmpty) {
+                                        final docSnap = snap.data!.docs.first;
+                                        // docSnap.data() puede ser Map<String, dynamic> o Map<Object?,Object?> según versión
+                                        final udata = docSnap.data();
+                                        if (udata is Map<String, dynamic> && udata.containsKey('fotoPerfil')) {
+                                          fotoPerfil = (udata['fotoPerfil'] ?? '').toString();
+                                          if (fotoPerfil.isEmpty) fotoPerfil = null;
+                                        } else {
+                                          fotoPerfil = null;
+                                        }
+                                      } else {
+                                        fotoPerfil = null;
+                                      }
+                                      
+                                      return PublicacionWidget(
+                                        autor: data['autor'] ?? localizations.desconocido,
+                                        mensaje: data['mensaje'] ?? '',
+                                        fecha: data['fechaFormateada'] ?? '',
+                                        publicacionId: doc.id,
+                                        autorActual: nombre ?? 'Vecino',
+                                        imageUrl: (data['archivoUrl'] ?? '').toString(),
+                                        uidActual: uid,
+                                        likes: List<String>.from(data['likes'] ?? const []),
+                                        dislikes: List<String>.from(data['dislikes'] ?? const []),
+                                        fotoPerfilAutor: fotoPerfil, // 👈 aquí pasamos la URL
+                                      );
+                                    },
                                   );
-                                }),
+                                }).toList(),
                               );
                             },
                           ),

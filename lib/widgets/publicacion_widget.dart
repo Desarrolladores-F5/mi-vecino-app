@@ -1,6 +1,7 @@
 // lib/widgets/publicacion_widget.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PublicacionWidget extends StatelessWidget {
   final String autor;
@@ -18,6 +19,7 @@ class PublicacionWidget extends StatelessWidget {
   final String uidActual;                 // uid del usuario logeado (puede ser "")
   final List<String> likes;               // uids que dieron like
   final List<String> dislikes;            // uids que dieron dislike
+  final String? fotoPerfilAutor;
 
   const PublicacionWidget({
     super.key,
@@ -31,6 +33,7 @@ class PublicacionWidget extends StatelessWidget {
     required this.uidActual,
     required this.likes,
     required this.dislikes,
+    this.fotoPerfilAutor, // 👈 nuevo parámetro opcional
   });
 
   bool get _yaLike => uidActual.isNotEmpty && likes.contains(uidActual);
@@ -56,19 +59,18 @@ class PublicacionWidget extends StatelessWidget {
     if (publicacionId == null || uidActual.isEmpty) return;
     final ref = FirebaseFirestore.instance.collection('publicaciones').doc(publicacionId);
 
-    final batch = FirebaseFirestore.instance.batch();
+    final Map<String, dynamic> updates = {};
     if (_yaDislike) {
-      batch.update(ref, {'dislikes': FieldValue.arrayRemove([uidActual])});
+      updates['dislikes'] = FieldValue.arrayRemove([uidActual]);
     } else {
-      batch.update(ref, {'dislikes': FieldValue.arrayUnion([uidActual])});
+      updates['dislikes'] = FieldValue.arrayUnion([uidActual]);
       if (_yaLike) {
-        batch.update(ref, {'likes': FieldValue.arrayRemove([uidActual])});
+        updates['likes'] = FieldValue.arrayRemove([uidActual]);
       }
     }
-    await batch.commit();
+    await ref.update(updates);
   }
-  
-    
+      
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -99,21 +101,43 @@ class PublicacionWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Autor + fecha
-            Text(
-              autor,
-              style: text.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: .2,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              fecha,
-              style: text.bodySmall?.copyWith(
-                color: muted,
-                height: 1.1,
-              ),
+
+            // Autor + avatar + fecha
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.grey.shade300,
+                  backgroundImage: (fotoPerfilAutor != null && fotoPerfilAutor!.isNotEmpty)
+                      ? NetworkImage(fotoPerfilAutor!)
+                      : null,
+                  child: (fotoPerfilAutor == null || fotoPerfilAutor!.isEmpty)
+                      ? const Icon(Icons.person, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      autor,
+                      style: text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      fecha,
+                      style: text.bodySmall?.copyWith(
+                        color: muted,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
 
             const SizedBox(height: 10),
@@ -222,8 +246,11 @@ class PublicacionWidget extends StatelessWidget {
                   return Column(
                     children: docs.map((d) {
                       final r = d.data() as Map<String, dynamic>;
-                      final rAutor = (r['autor'] ?? '—').toString();
-                      final rMsg = (r['mensaje'] ?? '').toString();
+                      final rAutor = (r['autor'] ?? '—').toString();  
+                      final raw = r['mensaje'] ?? r['texto'];                    
+                      final rMsg = (raw is String && raw.trim().isNotEmpty && raw.toLowerCase() != 'null') 
+                          ? raw
+                          : '';
                       return Padding(
                         padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
                         child: Row(
@@ -297,21 +324,50 @@ class _ResponderSheetState extends State<ResponderSheet> {
     final msg = _controller.text.trim();
     if (msg.isEmpty) return;
 
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes iniciar sesión')),
+      );
+      return;
+    }
+
     setState(() => _enviando = true);
 
-    await FirebaseFirestore.instance
+    try {
+      // Traer nombre actual
+      final uSnap = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(uid)
+          .get();
+      final nombre = (uSnap.data()?['nombre'] ?? 'Anónimo').toString();
+
+      await FirebaseFirestore.instance
         .collection('publicaciones')
         .doc(widget.publicacionId)
         .collection('respuestas')
         .add({
-      'autor': widget.autor,
-      'mensaje': msg,
-      'fecha': Timestamp.now(),
-    });
+      'uid'    : uid,                        // 👈 requerido por tus reglas
+      'autor'  : nombre,                     // visible en UI
+      'mensaje': msg,                        // 👈 clave correcta
+      'fecha'  : FieldValue.serverTimestamp()// mejor para orden consistente
+    });     
 
-    if (mounted) {
-      setState(() => _enviando = false);
+      _controller.clear();
+      if (!mounted) return;
       Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Respuesta enviada')),
+      );
+    } on FirebaseException catch (e) {      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.code}')),
+        );
+      }    
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
   }
 

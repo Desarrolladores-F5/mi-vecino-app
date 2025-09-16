@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart'; // 🔔 Pedir permi
 import 'package:url_launcher/url_launcher.dart'; // ✅ Abrir URLs externas (Maps/Navegador)
 import 'package:mi_vecino/core/topic_subscription.dart';
 
+
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -55,6 +56,28 @@ Future<void> _ensureAndroidNotificationChannel() async {
     await androidPlugin.createNotificationChannel(channel);
   }
 }
+
+/// 🔔 Canal específico para la ALARMA (sonido custom en notificación del sistema)
+Future<void> _ensureAlarmNotificationChannel() async {
+  const AndroidNotificationChannel alarmChannel = AndroidNotificationChannel(
+    'alarma_vecinal', // 👈 debe coincidir con channelId en tu Cloud Function
+    'Alarma Vecinal',
+    description: 'Notificaciones de alarma comunitaria',
+    importance: Importance.max,
+    playSound: true,
+    sound: RawResourceAndroidNotificationSound('alarma_vecinal_chat_ready'),
+  );
+
+  final androidPlugin = flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  if (androidPlugin != null) {
+    await androidPlugin.createNotificationChannel(alarmChannel);
+  }
+  
+}
+
 /// 🔔 Pide el permiso de notificaciones en Android 13+
 /// (En iOS el permiso lo maneja `FirebaseMessaging.instance.requestPermission()`.)
 Future<void> _ensureNotificationPermission() async {
@@ -121,9 +144,12 @@ Future<void> main() async {
   );
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
-
-  // 🔔 Crea/asegura el canal de alta prioridad en Android 8+
+   
+  // 🔔 Crea/asegura el canal de alta prioridad (general)
   await _ensureAndroidNotificationChannel();
+
+  // 🔔 Crea/asegura el canal ESPECÍFICO de ALARMA (sonido custom en background)
+  await _ensureAlarmNotificationChannel();
 
   // 🔔 Solicita permisos para notificaciones
   await FirebaseMessaging.instance.requestPermission(); // iOS / Android 13+
@@ -132,30 +158,41 @@ Future<void> main() async {
   // 🚀 Inicializa FCM (listeners para taps, background, etc.)
   await setupFCM(flutterLocalNotificationsPlugin);
 
-  // 🔔 Muestra banner local cuando la app está en primer plano
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = notification?.android;
-    if (notification != null && android != null) {
-      flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'mi_vecino_channel', // 👈 Debe coincidir con el canal creado
-            'Notificaciones de Mi Vecino',
-            channelDescription: 'Canal para notificaciones importantes',
-            importance: Importance.max,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            playSound: true,
-            enableVibration: true,
-          ),
-        ),
-      );
-    }
-  });
+   // 🔔 Muestra banner local cuando la app está en primer plano
+FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  final RemoteNotification? notification = message.notification;
+  final AndroidNotification? android = notification?.android;
+  if (notification == null || android == null) return;
+
+  // Lee 'type' o 'tipo' desde los datos
+  final String tipo = (message.data['type'] ?? message.data['tipo'] ?? '').toString();
+  final bool isAlarm = tipo == 'alarm';
+
+  flutterLocalNotificationsPlugin.show(
+    notification.hashCode,
+    notification.title,
+    notification.body,
+    NotificationDetails( // 👈 sin const
+      android: AndroidNotificationDetails(
+        isAlarm ? 'alarma_vecinal' : 'mi_vecino_channel', // canal según tipo
+        isAlarm ? 'Alarma Vecinal' : 'Notificaciones de Mi Vecino',
+        channelDescription: isAlarm
+            ? 'Notificaciones de alarma comunitaria'
+            : 'Canal para notificaciones importantes',
+        importance: Importance.max,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        // si quieres replicar el sonido de alarma también en foreground:
+        sound: isAlarm
+            ? RawResourceAndroidNotificationSound('alarma_vecinal_chat_ready')
+            : null,
+      ),
+    ),
+  );
+});
+
 
     // 👇 Si la app estaba terminada y fue abierta tocando la noti
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();

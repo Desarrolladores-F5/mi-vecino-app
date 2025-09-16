@@ -1,53 +1,72 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-/// ✅ Listener modular para alarma comunitaria
+final _fln = FlutterLocalNotificationsPlugin();
+
 Future<void> iniciarAlarmaListener(BuildContext context) async {
-  final usuario = FirebaseAuth.instance.currentUser;
-  final AudioPlayer player = AudioPlayer();
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-  if (usuario == null) return;
-
-  // Obtener comunidad (usando el campo dirección como identificador comunitario)
-  final userDoc = await FirebaseFirestore.instance
+  final snap = await FirebaseFirestore.instance
       .collection('usuarios')
-      .doc(usuario.uid)
+      .doc(user.uid)
       .get();
+  final data = snap.data();
+  if (data == null) return;
 
-  final data = userDoc.data();
-  if (data == null || !data.containsKey('direccion')) return;
+  final String comunidad = (data['nombre_comunidad'] ?? '').toString().trim();
+  if (comunidad.isEmpty) return;
 
-  final comunidad = data['direccion'];
+  bool yaMostrada = false;
 
-  // Escuchar cambios en el documento específico de esa comunidad
   FirebaseFirestore.instance
       .collection('alarmas_activas')
       .doc(comunidad)
       .snapshots()
       .listen((doc) async {
-    if (doc.exists && doc.data() != null) {
-      final data = doc.data() as Map<String, dynamic>;
-      final bool activa = data['activa'] ?? false;
+    final d = doc.data() ?? {};
+    final bool activa = d['activa'] == true;
+    final String desde = (d['activada_por_direccion'] ?? d['activada_por'] ?? '').toString();
 
-      if (activa) {
-        // ✅ Reproducir sonido de alarma
-        await player.play(
-          AssetSource('sounds/alarma_vecinal_chat_ready.mp3'),
+    if (activa && !yaMostrada) {
+      yaMostrada = true;
+
+      // 🔔 dispara notificación local con el canal de ALARMA (suena aunque estés en otra pantalla)
+      await _fln.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        '🚨 Alarma vecinal',
+        desde.isNotEmpty ? 'Alarma activada desde: $desde' : 'Se activó una alarma en tu comunidad',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'alarma_vecinal',           // 👈 canal ya creado en main.dart
+            'Alarma Vecinal',
+            channelDescription: 'Notificaciones de alarma comunitaria',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+            // sonido del canal (alarma_vecinal_chat_ready) ya está configurado al crear el canal,
+            // no hace falta repetirlo aquí.
+          ),
+        ),
+      );
+
+      // (Opcional) SnackBar visual:
+      if (context.mounted && desde.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🚨 ¡Alarma desde $desde!'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 3),
+          ),
         );
-
-        // ✅ Mostrar alerta visual
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('🚨 ¡Alarma activada en tu comunidad!'),
-              backgroundColor: Colors.redAccent,
-              duration: Duration(seconds: 5),
-            ),
-          );
-        }
       }
+    }
+
+    if (!activa) {
+      yaMostrada = false;
     }
   });
 }
