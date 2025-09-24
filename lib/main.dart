@@ -29,6 +29,7 @@ final GlobalKey<_MiVecinoAppState> appKey = GlobalKey<_MiVecinoAppState>();
 // ✅ Plugin de notificaciones locales (Android/iOS)
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+    const String kPanicChannelId = 'mi_vecino_panic_channel';
 
 // 🔔 Handler para mensajes recibidos en segundo plano / app cerrada
 @pragma('vm:entry-point')
@@ -76,6 +77,29 @@ Future<void> _ensureAlarmNotificationChannel() async {
     await androidPlugin.createNotificationChannel(alarmChannel);
   }
   
+}
+
+/// 🔔 Canal específico para el BOTÓN DE PÁNICO (sonido custom)
+Future<void> _ensurePanicNotificationChannel() async {
+  const AndroidNotificationChannel panicChannel = AndroidNotificationChannel(
+    kPanicChannelId, // 👈 debe coincidir con channelId en tu Cloud Function
+    'Alertas de Pánico',
+    description: 'Notificaciones del botón de pánico',
+    importance: Importance.max,
+    playSound: true,
+    // res/raw/panic_alert.mp3  (nombre sin extensión)
+    sound: RawResourceAndroidNotificationSound('panic_alert'),
+    enableVibration: true,
+    showBadge: true,
+  );
+
+  final androidPlugin = flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  if (androidPlugin != null) {
+    await androidPlugin.createNotificationChannel(panicChannel);
+  }
 }
 
 /// 🔔 Pide el permiso de notificaciones en Android 13+
@@ -150,6 +174,9 @@ Future<void> main() async {
 
   // 🔔 Crea/asegura el canal ESPECÍFICO de ALARMA (sonido custom en background)
   await _ensureAlarmNotificationChannel();
+
+  // botón de pánico (sonido discreto)
+  await _ensurePanicNotificationChannel();
 
   // 🔔 Solicita permisos para notificaciones
   await FirebaseMessaging.instance.requestPermission(); // iOS / Android 13+

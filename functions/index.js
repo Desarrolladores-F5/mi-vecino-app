@@ -48,7 +48,9 @@ exports.notificarPanicAlert = onDocumentCreated("panic_alerts/{alertId}", async 
   const data = {
     tipo: "panic",
     comunidad: comunidadRaw,     // texto “humano” para logs
-    emisorId: String(emisorId),
+    emisorId: String(emisorId || ""),
+    titulo: "🚨 Alerta de Pánico",
+    cuerpo: `${nombre} ha activado el botón de pánico en ${direccion}.`,
   };
   if (lat != null)  data.latitud  = String(lat);
   if (lng != null)  data.longitud = String(lng);
@@ -57,19 +59,21 @@ exports.notificarPanicAlert = onDocumentCreated("panic_alerts/{alertId}", async 
   const message = {
     topic,
     notification: {
-      title: "🚨 Alerta de Pánico",
-      body: `${nombre} ha activado el botón de pánico en ${direccion}.`,
+      title: data.titulo,
+      body: data.cuerpo,
     },
     data, // <- importante para cold start + abrir Maps
     android: {
       priority: "high",
       notification: {
-        channelId: "mi_vecino_channel",
+        channelId: "mi_vecino_panic_channel",
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
-        sound: "default",
+        //sound: "default",
       },
     },
   };
+
+  await admin.messaging().send(message);
 
   try {
     const id = await admin.messaging().send(message);

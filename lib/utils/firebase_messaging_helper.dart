@@ -31,8 +31,70 @@ Future<void> setupFCM(FlutterLocalNotificationsPlugin fln) async {
     await _handleNotificationTap(message);
   });
 
-  // ⚠️ Importante:
-  // Si tienes onMessage en otro lado mostrando banners locales,
+   // 5) ⭐ FOREGROUND: sonar según tipo (alarm / panic) y NO sonar en el emisor del pánico
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    final notification = message.notification;
+
+    // Lee el tipo desde data
+    final String tipo   = (message.data['type'] ?? message.data['tipo'] ?? '').toString();
+    final bool isAlarm  = tipo == 'alarm';
+    final bool isPanic  = tipo == 'panic';
+
+    // Evitar sonar en el emisor (solo para pánico)
+    final String myUid   = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final String emisorId = (message.data['emisorId'] ?? '').toString();
+    if (isPanic && myUid.isNotEmpty && emisorId == myUid) {
+      return; // soy el emisor → no sonar
+    }
+
+    // Canal + sonido (deben existir: creados en main.dart)
+    final String channelId = isAlarm
+        ? 'alarma_vecinal'
+        : (isPanic ? 'mi_vecino_panic_channel' : 'mi_vecino_channel');
+
+    final String channelName = isAlarm
+        ? 'Alarma Vecinal'
+        : (isPanic ? 'Alertas de Pánico' : 'Notificaciones de Mi Vecino');
+
+    final String? soundName = isAlarm
+        ? 'alarma_vecinal_chat_ready'
+        : (isPanic ? 'panic_alert' : null);
+
+    // Título/cuerpo: si no viene notification, usa fallback de data
+    final String title = notification?.title
+        ?? (isPanic ? '🚨 Alerta de Pánico' : 'Notificación');
+    final String body  = notification?.body
+        ?? (isPanic ? 'Se activó el botón de pánico.' : '');
+
+    await fln.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          channelId,
+          channelName,
+          channelDescription: isAlarm
+              ? 'Notificaciones de alarma comunitaria'
+              : (isPanic ? 'Notificaciones del botón de pánico' : 'Canal de notificaciones'),
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+          playSound: true,
+          enableVibration: true,
+          sound: soundName != null ? RawResourceAndroidNotificationSound(soundName) : null,
+        ),
+      ),
+      // (Opcional) payload para abrir Maps al tocar:
+      payload: message.data['mapUrl'],
+    );
+  });
+
+  // ⚠️ Nota:
+  // - No dupliques onMessage en otros archivos para evitar notificaciones dobles.
+  // - El sonido en background/bloqueado lo define el canal indicado por la Cloud Function.
+
+  // ⚠️ Importante:  
   // evita duplicarlo aquí para no mostrar dos notificaciones.
 }
 

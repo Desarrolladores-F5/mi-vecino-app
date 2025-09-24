@@ -69,6 +69,7 @@ class _PanicButtonScreenState extends State<PanicButtonScreen> {
       
       // 4. Guardar alerta en Firestore
       await FirebaseFirestore.instance.collection('panic_alerts').add({
+        'uid': user.uid,          // 👈 requerido por tus reglas
         'userId': user.uid,
         'nombre': nombre,
         'comunidad': comunidad,
