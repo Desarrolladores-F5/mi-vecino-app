@@ -21,6 +21,55 @@ function toTopic(communityName) {
   return `comunidad_${s}`;
 }
 
+// 🔔 cuando alguien crea una nueva publicación
+exports.onNuevaPublicacion = onDocumentCreated("publicaciones/{pubId}", async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+
+  const d = snap.data() || {};
+  const comunidadRaw = d.nombre_comunidad || d.comunidad || "";
+  const autor        = d.autor || "Un vecino";
+  const mensaje      = (d.mensaje || "").toString();
+  const pubId        = event.params.pubId;
+
+  if (!comunidadRaw) return;
+
+  // pequeño preview (no más de 100 chars)
+  const preview = mensaje.length > 100 ? `${mensaje.slice(0, 100)}…` : mensaje;
+
+  const topic = toTopic(comunidadRaw);
+
+  const data = {
+    tipo: "post",
+    postId: String(pubId),
+    comunidad: comunidadRaw,
+  };
+
+  const message = {
+    topic,
+    notification: {
+      title: "📰 Nueva publicación",
+      body: `${autor}: ${preview || "publicó algo nuevo en el muro"}`,
+    },
+    data,
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "mi_vecino_channel",     // ya creado en main.dart
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        sound: "default",
+      },
+    },
+  };
+
+  try {
+    const id = await admin.messaging().send(message);
+    console.log("FCM post ->", id, "topic:", topic, "pubId:", pubId);
+  } catch (err) {
+    console.error("Error enviando notificación de post:", err);
+  }
+});
+
 /**
  * 🔔 Se ejecuta al crear un documento en panic_alerts
  * Espera campos: comunidad, nombre, direccion, latitud, longitud, userId (opcional)
@@ -73,8 +122,7 @@ exports.notificarPanicAlert = onDocumentCreated("panic_alerts/{alertId}", async 
     },
   };
 
-  await admin.messaging().send(message);
-
+  
   try {
     const id = await admin.messaging().send(message);
     console.log("FCM message ID:", id, "topic:", topic, "data:", data);

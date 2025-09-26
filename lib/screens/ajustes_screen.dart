@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -214,9 +214,19 @@ class _AjustesScreenState extends State<AjustesScreen> {
                   SwitchListTile(
                     title: Text(localizations.activarNotificaciones),
                     value: notificacionesActivadas,
-                    onChanged: (valor) => setState(() {
-                      notificacionesActivadas = valor;
-                    }),
+                    onChanged: (valor) async {
+                      setState(() => notificacionesActivadas = valor);
+                      // suscribe / desuscribe al topic de la comunidad
+                      await _aplicarSuscripcionNovedades(valor);
+                      // opcional: persistir inmediatamente la preferencia (o deja que lo haga "Guardar cambios")
+                      final uid = FirebaseAuth.instance.currentUser?.uid;
+                      if (uid != null) {
+                        await FirebaseFirestore.instance
+                            .collection('usuarios')
+                            .doc(uid)
+                            .update({'notificaciones': valor});
+                      }
+                    },
                   ),
 
                   const SizedBox(height: 16),
@@ -236,4 +246,35 @@ class _AjustesScreenState extends State<AjustesScreen> {
             ),
     );
   }
+
+  Future<void> _aplicarSuscripcionNovedades(bool activar) async {
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) return;
+
+  // Leemos la comunidad del usuario
+  final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
+  final data = doc.data() ?? {};
+  final comunidad = (data['nombre_comunidad'] ?? '').toString().trim();
+  if (comunidad.isEmpty) return;
+
+  // Mismo normalizador que usamos en Functions
+  String toTopic(String name) {
+    final s = name
+        .trim()
+        .toLowerCase()
+        .replaceAll(' ', '_')
+        .replaceAll(RegExp(r'[^a-z0-9_\-\.~%]'), '');
+    return 'comunidad_$s';
+  }
+
+  final topic = toTopic(comunidad);
+  final fcm = FirebaseMessaging.instance;
+
+  if (activar) {
+    await fcm.subscribeToTopic(topic);
+  } else {
+    await fcm.unsubscribeFromTopic(topic);
+  }
+}
+
 }
