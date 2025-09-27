@@ -15,6 +15,8 @@ import 'package:mi_vecino/utils/alarma_listener.dart'; // ✅ Listener modular d
 import 'package:mi_vecino/widgets/publicacion_widget.dart';
 import 'dart:math' as math;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mi_vecino/core/feature_flags.dart';
+
 
 // Lista de patrones disponibles
 const _svgPatterns = <String>[
@@ -37,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? comunidad;
   String? fotoUrl;
   bool cargandoUsuario = true;
+  String? nombreComunidad;
 
   Map<String, bool> mostrarFormulario = {};
   Map<String, TextEditingController> controladoresRespuesta = {};
@@ -87,12 +90,43 @@ class _HomeScreenState extends State<HomeScreen> {
             comunidad = data?['nombre_comunidad'];
             fotoUrl = data?['fotoPerfil'];
             cargandoUsuario = false;
+            nombreComunidad = (data?['nombre_comunidad'] ?? '').toString();
           });
         }
       } catch (e) {
         setState(() => cargandoUsuario = false);
       }
     }
+  }
+    // Normaliza para que coincida con el ID del doc en Firestore
+  String _normCommunityId(String s) => s.trim().toLowerCase();
+
+  Future<bool> _camarasEnabled(String comunidadId) async {
+    if (comunidadId.isEmpty) return false;
+    final doc = await FirebaseFirestore.instance
+        .collection('config_comunidades')
+        .doc(_normCommunityId(comunidadId))
+        .get();
+    final data = doc.data();
+    return data != null && data['camaras_habilitadas'] == true;
+  }
+
+
+    /// Consulta si el módulo de Cámaras debe mostrarse para la comunidad actual.
+  /// Respeta el flag global kFeatureCamaras (apagado por build).
+  Future<bool> _isCamarasEnabled() async {
+    if (!kFeatureCamaras) return false;
+
+    final id = (comunidad ?? '').trim();
+    if (id.isEmpty) return false;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('config_comunidades')
+        .doc(id)
+        .get();
+
+    final data = doc.data();
+    return (data != null && data['camaras_habilitadas'] == true);
   }
 
   Future<void> confirmarCerrarSesion() async {
@@ -210,11 +244,29 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text(AppLocalizations.of(context).telefonosEmergencia),
               onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/telefonos_emergencia');},
             ),
-            ListTile(
-              leading: const Icon(Icons.videocam),
-              title: Text(AppLocalizations.of(context).camarasComunitarias),
-              onTap: () {Navigator.pop(context);Navigator.pushNamed(context, '/camaras');},
-            ),
+            // Cámaras Comunitarias (protegido por flag + config Firestore)
+            // 👇 Dentro del Drawer, donde van los demás ListTile
+            if (kFeatureCamaras)
+              FutureBuilder<bool>(
+                future: _camarasEnabled(nombreComunidad ?? ''), // comunidad actual
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink(); // mientras carga, no muestra nada
+                  }
+                  if (snapshot.hasData && snapshot.data == true) {
+                    return ListTile(
+                      leading: const Icon(Icons.videocam, color: Colors.green),
+                      title: Text(localizations.camarasComunitarias),
+                      onTap: () {
+                        Navigator.pushNamed(context, '/camaras', 
+                        arguments: nombreComunidad,);
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink(); // si no está habilitado, no muestra nada
+                },
+              ),
+
             ListTile(
               leading: const Icon(Icons.warning),
               title: const Text('Botón de Pánico'),

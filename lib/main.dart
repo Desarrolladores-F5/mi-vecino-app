@@ -11,7 +11,7 @@ import 'dart:io'; // 🔔 Detectar plataforma
 import 'package:permission_handler/permission_handler.dart'; // 🔔 Pedir permiso Android 13+
 import 'package:url_launcher/url_launcher.dart'; // ✅ Abrir URLs externas (Maps/Navegador)
 import 'package:mi_vecino/core/topic_subscription.dart';
-
+import 'package:flutter/foundation.dart'; // para kDebugMode y debugPrint
 
 // 📱 Pantallas de la app
 import 'screens/login_screen.dart';
@@ -35,7 +35,9 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print("Mensaje recibido en background: ${message.messageId}");
+  if (kDebugMode) {
+    debugPrint("Mensaje recibido en background: ${message.messageId}");
+  }  
 }
 
 /// 🔔 Crea/asegura un canal de notificaciones de alta prioridad en Android 8+
@@ -110,7 +112,9 @@ Future<void> _ensureNotificationPermission() async {
     if (status.isPermanentlyDenied) {
       // Opcional: abrir ajustes si el usuario lo denegó para siempre.
       // await openAppSettings();
-      print('Permiso de notificaciones denegado permanentemente.');
+      if (kDebugMode) {
+        debugPrint('Permiso de notificaciones denegado permanentemente.');
+      }
     }
   }
 }
@@ -121,10 +125,10 @@ Future<void> openMapIfPresent(RemoteMessage message) async {
     final data = message.data;
     final String? mapUrl = data['mapUrl'] as String?;
     if (mapUrl == null || mapUrl.trim().isEmpty) {
-      print('ℹ️ No vino mapUrl en los datos: $data');
+      if (kDebugMode) debugPrint('ℹ️ No vino mapUrl en los datos: $data');
       return;
     }
-    print('✅ mapUrl recibido: $mapUrl');
+    if (kDebugMode) debugPrint('✅ mapUrl recibido: $mapUrl');
 
     final uri = Uri.parse(mapUrl);
     if (await canLaunchUrl(uri)) {
@@ -132,15 +136,17 @@ Future<void> openMapIfPresent(RemoteMessage message) async {
         uri,
         mode: LaunchMode.externalApplication, // 👈 clave para Android
       );
-      if (!ok) {
-        print('⚠️ launchUrl retornó false para $mapUrl');
+      if (!ok && kDebugMode) {
+        debugPrint('⚠️ launchUrl retornó false para $mapUrl');
       }
     } else {
-      print('❌ No se pudo abrir el mapa (canLaunchUrl == false)');
+      if (kDebugMode) debugPrint('❌ No se pudo abrir el mapa (canLaunchUrl == false)');
     }
   } catch (e, st) {
-    print('❌ Error abriendo mapUrl: $e');
-    print(st);
+    if (kDebugMode) {
+      debugPrint('❌ Error abriendo mapUrl: $e');
+      debugPrint(st.toString());
+    }
   }
 }
 Future<void> main() async {
@@ -224,13 +230,13 @@ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     // 👇 Si la app estaba terminada y fue abierta tocando la noti
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {
-    print('onGetInitialMessage -> data: ${initialMessage.data}');
+    if (kDebugMode) debugPrint('onGetInitialMessage -> data: ${initialMessage.data}');
     await openMapIfPresent(initialMessage);
   }
 
   // 👇 Si la app estaba en background y el usuario tocó la noti
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
-    print('onMessageOpenedApp -> data: ${message.data}');
+    if (kDebugMode) debugPrint('onMessageOpenedApp -> data: ${message.data}');
     await openMapIfPresent(message);
   });
 
@@ -301,7 +307,11 @@ class _MiVecinoAppState extends State<MiVecinoApp> {
         '/idioma': (context) => const IdiomaScreen(),
         '/telefonos_emergencia': (context) =>
             const TelefonosEmergenciaScreen(),
-        '/camaras': (context) => const CamarasScreen(),
+        '/camaras': (context) {
+          final nombreComunidad =
+              ModalRoute.of(context)!.settings.arguments as String?;
+          return CamarasScreen(nombreComunidad: nombreComunidad);
+        },
         '/panic': (context) => const PanicButtonScreen(),
       },
     );

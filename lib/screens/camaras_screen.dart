@@ -1,66 +1,108 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:mi_vecino/l10n/app_localizations.dart';
 
 class CamarasScreen extends StatelessWidget {
-  const CamarasScreen({super.key});
+  const CamarasScreen({super.key, this.nombreComunidad});
 
-  final List<Map<String, String>> camaras = const [
-    {
-      'nombre': 'Viña del Mar - Playa Reñaca',
-      'url': 'https://www.skylinewebcams.com/es/webcam/chile/valparaiso/vina-del-mar/vina-del-mar.html',
-    },
-    {
-      'nombre': 'Playa El Quisco',
-      'url': 'https://www.skylinewebcams.com/es/webcam/chile/valparaiso/san-antonio/el-quisco.html',
-    },
-    {
-      'nombre': 'Valparaíso - Puerto',
-      'url': 'https://www.skylinewebcams.com/es/webcam/chile/valparaiso/valparaiso/panorama.html',
-    },
-  ];
+  final String? nombreComunidad;
+
+  Future<List<Map<String, String>>> _loadCamaras() async {
+    final id = (nombreComunidad ?? '').trim();
+    if (id.isEmpty) return const [];
+
+    final snap = await FirebaseFirestore.instance
+        .collection('config_comunidades')
+        .doc(id)
+        .get();
+
+    final data = snap.data() ?? {};
+    final cams = (data['camaras'] as List?) ?? const [];
+    return cams
+        .whereType<Map>()
+        .map((m) => {
+              'nombre': (m['nombre'] ?? '').toString(),
+              'url': (m['url'] ?? '').toString(),
+            })
+        .where((m) => m['nombre']!.isNotEmpty && m['url']!.isNotEmpty)
+        .toList(growable: false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
+    final local = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localizations.camarasComunitarias),
+        title: Text(local.camarasComunitarias),
         backgroundColor: const Color(0xFF3EC6A8),
       ),
-      body: ListView.builder(
-        itemCount: camaras.length,
-        itemBuilder: (context, index) {
-          final camara = camaras[index];
-          return ListTile(
-            leading: const Icon(Icons.videocam, color: Colors.green),
-            title: Text(camara['nombre']!),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) {
-                    final local = AppLocalizations.of(context);
-                    return Scaffold(
-                      appBar: AppBar(
-                        title: Text(
-                            '${local.camarasComunitarias} - ${camara['nombre']!}'),
-                        backgroundColor: const Color(0xFF3EC6A8),
-                      ),
-                      body: WebViewWidget(
-                        controller: WebViewController()
-                          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                          ..loadRequest(Uri.parse(camara['url']!)),
-                      ),
-                    );
-                  },
+      body: FutureBuilder<List<Map<String, String>>>(
+        future: _loadCamaras(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final camaras = snap.data ?? const [];
+
+          if (camaras.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No hay cámaras configuradas para esta comunidad.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
+              ),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: camaras.length,
+            itemBuilder: (context, i) {
+              final c = camaras[i];
+              return ListTile(
+                leading: const Icon(Icons.videocam, color: Colors.green),
+                title: Text(c['nombre']!),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => _CamWebView(
+                        titulo: '${local.camarasComunitarias} - ${c['nombre']}',
+                        url: c['url']!,
+                      ),
+                    ),
+                  );
+                },
               );
             },
           );
         },
       ),
+    );
+  }
+}
+
+class _CamWebView extends StatelessWidget {
+  const _CamWebView({required this.titulo, required this.url});
+  final String titulo;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(url));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(titulo),
+        backgroundColor: const Color(0xFF3EC6A8),
+      ),
+      body: WebViewWidget(controller: controller),
     );
   }
 }

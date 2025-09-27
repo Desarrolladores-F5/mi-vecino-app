@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // 📄 Firestore
 // import 'package:firebase_messaging/firebase_messaging.dart'; // 🔔 Notificaciones push
 import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Traducciones
 import 'package:mi_vecino/core/topic_subscription.dart';
+import 'package:flutter/foundation.dart'; // kDebugMode + debugPrint
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -58,7 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
           final String comunidadElegida = comunidadFirestore;
 
           if (comunidadElegida.isEmpty) {
-            print('⚠️ No se encontró una comunidad válida para el usuario.');
+            if (kDebugMode) {
+              debugPrint('⚠️ No se encontró una comunidad válida para el usuario.');
+            }
           } else {
               // 3) Suscripción persistente centralizada en el helper
               //    - Normaliza el nombre (espacios, mayúsculas, caracteres)
@@ -66,7 +69,9 @@ class _LoginScreenState extends State<LoginScreen> {
               //    - Si ya había otro topic, hace el unsubscribe del anterior
               //    - Luego subscribe al nuevo topic
             await TopicSubscription.updateCommunityAndResubscribe(comunidadElegida);
-            print('✅ Suscripción persistente lista para la comunidad: $comunidadElegida');
+              if (kDebugMode) {
+                debugPrint('✅ Suscripción persistente lista para la comunidad: $comunidadElegida');
+              }
           }        
         }
 

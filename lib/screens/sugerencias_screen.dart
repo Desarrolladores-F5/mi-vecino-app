@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mi_vecino/l10n/app_localizations.dart'; // 🌐 Soporte de idiomas
+import 'package:flutter/foundation.dart'; // para kDebugMode y debugPrint
+
 
 class SugerenciasScreen extends StatefulWidget {
   const SugerenciasScreen({super.key});
@@ -38,7 +40,9 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
         );
       }
     } catch (e) {
-      print('❌ Error al enviar sugerencia: $e');
+      if (kDebugMode) {
+        debugPrint('❌ Error al enviar sugerencia: $e');
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).errorSugerencia)),

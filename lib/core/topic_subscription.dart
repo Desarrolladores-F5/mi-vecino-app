@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart'; // para kDebugMode y debugPrint
 
 class TopicSubscription {
   static const _prefsKeyCommunity = 'comunidad';
@@ -21,7 +22,9 @@ class TopicSubscription {
     final prefs = await SharedPreferences.getInstance();
     final comunidad = prefs.getString(_prefsKeyCommunity);
     if (comunidad == null || comunidad.trim().isEmpty) {
-      print('ℹ️ No hay comunidad guardada localmente. No se suscribe a ningún topic.');
+      if (kDebugMode) {
+      debugPrint('ℹ️ No hay comunidad guardada localmente. No se suscribe a ningún topic.');
+      }
       return;
     }
     final topic = _toTopic(comunidad);
@@ -29,12 +32,16 @@ class TopicSubscription {
 
     if (prev != null && prev.isNotEmpty && prev != topic) {
       await FirebaseMessaging.instance.unsubscribeFromTopic(prev);
-      print('🔕 Unsubscribed de topic previo: $prev');
+      if (kDebugMode) {
+        debugPrint('🔕 Unsubscribed de topic previo: $prev');
+      }
     }
 
     await FirebaseMessaging.instance.subscribeToTopic(topic);
     await prefs.setString(_prefsKeyPrevTopic, topic);
-    print('🔔 Subscribed a topic: $topic (comunidad: $comunidad)');
+    if (kDebugMode) {
+      debugPrint('🔔 Subscribed a topic: $topic (comunidad: $comunidad)');
+    }
   }
 
   /// Guarda la comunidad elegida localmente y ajusta la suscripción.

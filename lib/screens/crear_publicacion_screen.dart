@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:mi_vecino/l10n/app_localizations.dart';
+import 'package:flutter/foundation.dart'; // kDebugMode + debugPrint
 
 class CrearPublicacionScreen extends StatefulWidget {
   const CrearPublicacionScreen({super.key});
@@ -92,11 +93,11 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
           tipoArchivo = 'otro';
         }
 
-        print('✅ Upload OK → $path');
-        print('✅ URL: $urlArchivo');
+        if (kDebugMode) debugPrint('✅ Upload OK → $path');
+        if (kDebugMode) debugPrint('✅ URL: $urlArchivo');
       } on FirebaseException catch (e) {
         // Si falla la subida, seguimos pero sin archivo
-        print('❌ Storage error: ${e.code} - ${e.message}');
+        if (kDebugMode) debugPrint('❌ Storage error: ${e.code} - ${e.message}');
         urlArchivo = null;
       }
     }
@@ -159,7 +160,7 @@ class _CrearPublicacionScreenState extends State<CrearPublicacionScreen> {
     if (mounted) Navigator.pop(context);
 
   } catch (e) {
-    print('❌ Error al publicar: $e');
+    if (kDebugMode) debugPrint('❌ Error al publicar: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(localizations.errorPublicar)),
     );
