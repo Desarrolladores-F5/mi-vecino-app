@@ -47,3 +47,7 @@ app.*.map.json
 # Firebase files (opcional si no quieres subir configuraciones locales)
 firebase.json
 *.firebase/
+
+android/key.properties
+*.jks
+*.keystore

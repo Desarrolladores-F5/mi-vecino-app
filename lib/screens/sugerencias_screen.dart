@@ -28,6 +28,7 @@ class _SugerenciasScreenState extends State<SugerenciasScreen> {
     try {
       await FirebaseFirestore.instance.collection('sugerencias').add({
         'uid': uid,
+        'email': FirebaseAuth.instance.currentUser?.email, // 👈 NUEVO
         'mensaje': mensaje,
         'fecha': DateTime.now(),
       });

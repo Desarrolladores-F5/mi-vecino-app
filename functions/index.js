@@ -1,6 +1,10 @@
 const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2/options");
 const admin = require("firebase-admin");
+// NUEVO: logger y nodemailer + secrets
+const logger = require("firebase-functions/logger");
+const nodemailer = require("nodemailer");
+const { defineSecret } = require("firebase-functions/params");
 
 admin.initializeApp();
 setGlobalOptions({ region: "us-central1" });
@@ -203,3 +207,93 @@ exports.onAlarmWrite = onDocumentWritten("alarmas_activas/{comunidadId}", async 
   }
   
 });
+
+// =========================
+// NUEVO: Envío de correo al crear sugerencia
+// =========================
+
+// Secrets (CLI: functions:secrets:set ...)
+const SMTP_USER = defineSecret("SMTP_USER"); // upf5digital@gmail.com
+const SMTP_PASS = defineSecret("SMTP_PASS"); // App Password (16 chars)
+const SMTP_HOST = defineSecret("SMTP_HOST"); // smtp.gmail.com
+const SMTP_PORT = defineSecret("SMTP_PORT"); // 465 (SSL) o 587 (STARTTLS)
+
+exports.enviarCorreoSugerencia = onDocumentCreated(
+  {
+    document: "sugerencias/{docId}",
+    region: "us-central1",
+    secrets: [SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT],
+    retry: true, // reintentos si falla por red/SMTP
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const d = snap.data() || {};
+    const uid     = d.uid || "-";
+    const email   = (d.email || "-").toString();
+    const mensaje = (d.mensaje || "").toString();
+
+    // Fecha legible
+    const fecha = (() => {
+      try {
+        if (d?.fecha?.toDate) return d.fecha.toDate().toISOString();
+        if (d?.fecha?.seconds) return new Date(d.fecha.seconds * 1000).toISOString();
+        return new Date().toISOString();
+      } catch {
+        return new Date().toISOString();
+      }
+    })();
+
+    // Transporter SMTP (Gmail)
+    const host = SMTP_HOST.value() || "smtp.gmail.com";
+    const port = Number(SMTP_PORT.value() || 465);
+    const secure = port === 465;
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: {
+        user: SMTP_USER.value(), // upf5digital@gmail.com
+        pass: SMTP_PASS.value(), // App Password 16
+      },
+    });
+
+    // Email
+    const from = `"Mi Vecino" <${SMTP_USER.value()}>`;
+    const to   = "contacto@upf5.com"; // destinatario final (tu casilla de recepción)
+    const replyTo = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? email : undefined;
+
+    const subject = "Nueva sugerencia – Mi Vecino";
+    const text = [
+      `UID: ${uid}`,
+      `Email: ${email}`,
+      `Fecha: ${fecha}`,
+      "",
+      "Mensaje:",
+      mensaje,
+    ].join("\n");
+
+    const html = `
+      <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+        <h2>Mi Vecino – Nueva sugerencia</h2>
+        <p><b>UID:</b> ${uid}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Fecha:</b> ${fecha}</p>
+        <hr/>
+        <p><b>Mensaje:</b></p>
+        <pre style="white-space:pre-wrap;font-family:inherit">${mensaje
+          .replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre>
+      </div>
+    `;
+
+    try {
+      await transporter.sendMail({ from, to, replyTo, subject, text, html });
+      logger.info("✅ Sugerencia enviada a contacto@upf5.com");
+    } catch (err) {
+      logger.error("❌ Error enviando correo de sugerencia", err);
+      throw err; // permite retry automático
+    }
+  }
+);

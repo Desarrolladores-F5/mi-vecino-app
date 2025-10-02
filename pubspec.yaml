@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+2
+version: 2.0.0+3
 
 environment:
   sdk: ^3.8.0
@@ -37,22 +37,22 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  firebase_core: ^3.13.1
-  firebase_auth: ^5.5.4
-  cloud_firestore: ^5.6.8
+  firebase_core: ^3.15.0           # 👈 actualizar
+  firebase_auth: ^5.7.0           # 👈 actualizar
+  cloud_firestore: ^5.6.11         # 👈 actualizar
   awesome_dialog: ^3.1.0   # 👈 Agregado aquí
   animated_text_kit: ^4.2.2
-  image_picker: ^1.0.4 # 👈 Usa esta o la última versión estable
-  firebase_storage: ^12.4.6
+  image_picker: ^1.2.0 # 👈 Usa esta o la última versión estable
+  firebase_storage: ^12.4.9
   intl: ^0.20.2 # ✅ Compatible con Firebase y Dart actuales y flutter_localizations
-  package_info_plus: ^4.1.0
+  package_info_plus: ^4.2.0
   connectivity_plus: ^6.0.3
-  firebase_app_check: ^0.3.2+7
-  file_selector: ^1.0.3   # Para seleccionar archivos
+  firebase_app_check: ^0.3.2+8             # 👈 actualizar
+  file_selector: ^1.0.4   # Para seleccionar archivos
   path: ^1.9.0          # Para manipular rutas de archivos
   audioplayers: ^5.2.1
-  firebase_messaging: ^15.2.9  # O la versión más reciente, para hacer funcionar la alarma
-  flutter_local_notifications: ^19.2.1   # para hacer funcionar la alarma
+  firebase_messaging: ^15.2.9  # O la versión más reciente, para hacer funcionar la alarma  # 👈 actualizar
+  flutter_local_notifications: ^19.4.1   # para hacer funcionar la alarma    # 👈 actualizar
   url_launcher: ^6.3.1   # para hacer llamadas de emergencia a carabineros o bomberos, etc.
   webview_flutter: ^4.13.0
   geolocator: ^14.0.1 # para hacer funcionar el boton de pánico y me muestre quien lo hace.
@@ -95,10 +95,7 @@ flutter:
         - asset: fonts/MiVecinoFont.ttf
   
 # 👇 Esto asegura que use la carpeta l10n para traducciones
-localizations:
-  arb-dir: lib/l10n       # ✅ Ruta correcta de los archivos .arb
-  template-arb-file: app_en.arb             # ✅ Archivo base en inglés
-  output-localization-file: app_localizations.dart             # ✅ Nombre de salida
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:

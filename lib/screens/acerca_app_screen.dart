@@ -38,13 +38,14 @@ class _AcercaAppScreenState extends State<AcercaAppScreen> {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,     // centramos contenido horizontal
           children: [
             Text('Mi Vecino', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Text(
               localizations.descripcionApp, // 🌍 Descripción traducida
               style: const TextStyle(fontSize: 16),
+              textAlign: TextAlign.center, // centrado por si es largo
             ),
             const SizedBox(height: 24),
             Text('${localizations.version}: $version', style: const TextStyle(color: Colors.grey)),

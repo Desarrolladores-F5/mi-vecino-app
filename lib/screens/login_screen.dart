@@ -264,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Créditos
                 const Text(
-                  'Desarrollado por F-5 Soluciones Tecnológicas © 2025, version 2.0',
+                  'Desarrollado por UpF5 Digital © 2025, version 2.0',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey,

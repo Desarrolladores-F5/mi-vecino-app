@@ -1,3 +1,14 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+// Cargar android/key.properties
+val keystorePropsFile = rootProject.file("key.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) {
+        load(FileInputStream(keystorePropsFile))
+    }
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -32,11 +43,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropsFile.exists()) {
+                storeFile = file(keystoreProps["keystoreFile"] as String)
+                storePassword = keystoreProps["storePassword"] as String?
+                keyAlias = keystoreProps["keyAlias"] as String?
+                keyPassword = keystoreProps["keyPassword"] as String?
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Firma release con tu keystore (ya no con debug)            
+            signingConfig = signingConfigs.getByName("release")
+            // (Opcional) optimizaciones para Play
+            // isMinifyEnabled = true
+            // isShrinkResources = true
         }
     }
 }

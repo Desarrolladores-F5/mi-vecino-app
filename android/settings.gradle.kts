@@ -11,6 +11,7 @@ pluginManagement {
 
     repositories {
         google()
+        maven("https://maven.google.com")   // <- mirror de Google Maven (opcional, recomendado)
         mavenCentral()
         gradlePluginPortal()
     }
